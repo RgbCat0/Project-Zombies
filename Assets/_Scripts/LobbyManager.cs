@@ -66,7 +66,12 @@ namespace _Scripts
             }
         }
 
-        private async void CreateLobby(string lobbyName, bool isPrivate)
+        public void CreateLobby(string lobbyName)
+        {
+            CreateLobbyP(lobbyName);
+        }
+
+        private async void CreateLobbyP(string lobbyName, bool isPrivate = false)
         {
             try
             {
@@ -76,9 +81,9 @@ namespace _Scripts
                     maxPlayers,
                     options
                 );
-                if (logLevel == LogLevel.All)
-                    Debug.Log($"Created lobby {_lobby.Id}");
                 await RelayService.Instance.CreateAllocationAsync(maxPlayers);
+                if (logLevel == LogLevel.All)
+                    Debug.Log($"Created lobby {_lobby.Name}");
             }
             catch (Exception e)
             {
@@ -87,17 +92,43 @@ namespace _Scripts
             }
         }
 
-        public QueryResponse GetLobbies()
+        public async Task<QueryResponse> GetLobbies()
         {
             try
             {
-                return LobbyService.Instance.QueryLobbiesAsync().Result;
+                //testing quick join
+                // var test = await LobbyService.Instance.QuickJoinLobbyAsync();
+                // Debug.Log($"Quick joined lobby: {test.Name}");
+                // return null;
+                var test = await LobbyService.Instance.QueryLobbiesAsync();
+                if (logLevel == LogLevel.All)
+                    Debug.Log($"Got lobbies: {test.Results.Count}");
+                return test;
             }
             catch (Exception e)
             {
                 if (logLevel is LogLevel.Error or LogLevel.All)
                     Debug.LogError($"Failed to get lobbies: {e.Message}");
                 return null;
+            }
+        }
+
+        public void JoinLobby(string lobbyId)
+        {
+            JoinLobbyP(lobbyId);
+        }
+
+        private async void JoinLobbyP(string lobbyId)
+        {
+            try
+            {
+                await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
+                if (logLevel == LogLevel.All)
+                    Debug.Log($"Joined lobby {lobbyId}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to join lobby: {e.Message}");
             }
         }
     }

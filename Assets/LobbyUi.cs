@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
@@ -46,6 +48,9 @@ public class LobbyUi : MonoBehaviour
     [SerializeField]
     private TMP_InputField joinLobbyCode;
 
+    [SerializeField]
+    private GameObject newLobbyPrefab;
+
     private void Start() // Always starts in main menu
     {
         mainMenu.SetActive(true);
@@ -61,7 +66,7 @@ public class LobbyUi : MonoBehaviour
     {
         mainName.text = "";
         hostLobbyName.text = "";
-        joinLobbyCode.text = "";
+        // joinLobbyCode.text = "";
         mainName.onValueChanged.AddListener(
             delegate
             {
@@ -106,9 +111,10 @@ public class LobbyUi : MonoBehaviour
         view.SetActive(true);
     }
 
-    private void GetLobbies()
+    private async void GetLobbies()
     {
-        QueryResponse lobbies = LobbyManager.Instance.GetLobbies();
+        QueryResponse lobbies = await LobbyManager.Instance.GetLobbies();
+        List<Lobby> test = lobbies.Results;
         if (lobbies.Results.Count == 0)
         {
             Debug.Log("No lobbies found");
@@ -117,6 +123,36 @@ public class LobbyUi : MonoBehaviour
         lobbies.Results.ForEach(lobby =>
         {
             Debug.Log($"Lobby: {lobby.Name} - {lobby.Id}");
+            CreateLobbyUi(lobby);
         });
+    }
+
+    private void CreateLobbyUi(Lobby lobby)
+    {
+        GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
+        var hostname = lobby.HostId;
+        foreach (Player player in lobby.Players.Where(player => player.Id == hostname))
+        {
+            hostname = player.Profile.Name;
+        }
+
+        newLobby.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
+            $"{lobby.Name}\n{hostname}"; // should be lobby name
+        newLobby
+            .transform.GetChild(0)
+            .GetChild(1)
+            .GetComponent<Button>()
+            .onClick.AddListener(() => JoinLobby(lobby));
+    }
+
+    private void JoinLobby(Lobby lobby)
+    {
+        Debug.Log($"Joining lobby: {lobby.Name}");
+        LobbyManager.Instance.JoinLobby(lobby.Id);
+    }
+
+    public void CreateGame()
+    {
+        LobbyManager.Instance.CreateLobby(hostLobbyName.text);
     }
 }

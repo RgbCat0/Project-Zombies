@@ -1,10 +1,13 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using TMPro;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
 using _Scripts;
+using Player = Unity.Services.Lobbies.Models.Player;
 
 public class LobbyUi : MonoBehaviour
 {
@@ -33,10 +36,10 @@ public class LobbyUi : MonoBehaviour
     private Button hostCreate;
 
     [SerializeField]
-    private Button joinJoin;
+    private Button lobbyDelete;
 
     [SerializeField]
-    private Button copyCode;
+    private Button lobbyDisconnect;
 
     [Header("Input Fields")]
     [SerializeField]
@@ -46,27 +49,42 @@ public class LobbyUi : MonoBehaviour
     private TMP_InputField hostLobbyName;
 
     [SerializeField]
-    private TMP_InputField joinLobbyCode;
+    private GameObject newLobbyPrefab;
 
     [SerializeField]
-    private GameObject newLobbyPrefab;
+    private GameObject newPlayerPrefab;
+
+    private int _yDownAmount = 100;
+    private int _currentYDownAmount;
+    private List<GameObject> _playerList = new List<GameObject>();
 
     private void Start() // Always starts in main menu
     {
-        mainMenu.SetActive(true);
-        hostMenu.SetActive(false);
-        joinMenu.SetActive(false);
-        lobbyMenu.SetActive(false);
+        ChangeView();
+        if (LobbyManager.Instance.IsSignedIn == false)
+        {
+            StartCoroutine(WaitForSignIn());
+            return;
+        }
+        ChangeView(mainMenu);
         mainHost.interactable = false;
         mainJoin.interactable = false;
         SetupInputFields();
+    }
+
+    private IEnumerator WaitForSignIn()
+    {
+        while (LobbyManager.Instance.IsSignedIn == false)
+        {
+            yield return null;
+        }
+        Start();
     }
 
     private void SetupInputFields()
     {
         mainName.text = "";
         hostLobbyName.text = "";
-        // joinLobbyCode.text = "";
         mainName.onValueChanged.AddListener(
             delegate
             {
@@ -91,58 +109,90 @@ public class LobbyUi : MonoBehaviour
 
     public async void HostMenu()
     {
-        await LobbyManager.Instance.ChangeName(mainName.text);
-        ChangeView(hostMenu);
+        try
+        {
+            await LobbyManager.Instance.ChangeName(mainName.text);
+            ChangeView(hostMenu);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to change lobby: {e.Message}");
+        }
     }
 
     public async void JoinMenu()
     {
-        await LobbyManager.Instance.ChangeName(mainName.text);
+        try { }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to join lobby: {e.Message}");
+        }
+        await ChangeName(mainName.text);
         ChangeView(joinMenu);
         GetLobbies();
     }
 
-    private void ChangeView(GameObject view)
+    private async Task ChangeName(string newName)
+    {
+        try
+        {
+            await LobbyManager.Instance.ChangeName(newName);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to change name: {e.Message}");
+        }
+    }
+
+    private void ChangeView(GameObject view = null)
     {
         mainMenu.SetActive(false);
         hostMenu.SetActive(false);
         joinMenu.SetActive(false);
         lobbyMenu.SetActive(false);
-        view.SetActive(true);
+        view?.SetActive(true);
     }
 
     private async void GetLobbies()
     {
-        QueryResponse lobbies = await LobbyManager.Instance.GetLobbies();
-        List<Lobby> test = lobbies.Results;
-        if (lobbies.Results.Count == 0)
+        try
         {
-            Debug.Log("No lobbies found");
-            return;
+            QueryResponse lobbies = await LobbyManager.Instance.GetLobbies();
+            if (lobbies.Results.Count == 0)
+            {
+                Debug.Log("No lobbies found");
+                return;
+            }
+            lobbies.Results.ForEach(lobby =>
+            {
+                Debug.Log($"Lobby: {lobby.Name} - {lobby.Id}");
+                CreateLobbyUi(lobby);
+            });
         }
-        lobbies.Results.ForEach(lobby =>
+        catch (Exception e)
         {
-            Debug.Log($"Lobby: {lobby.Name} - {lobby.Id}");
-            CreateLobbyUi(lobby);
-        });
+            Debug.LogError($"Failed to get lobbies: {e.Message}");
+        }
     }
 
     private void CreateLobbyUi(Lobby lobby)
     {
-        GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
-        var hostname = lobby.HostId;
-        foreach (Player player in lobby.Players.Where(player => player.Id == hostname))
+        try
         {
-            hostname = player.Profile.Name;
+            GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
+            newLobby.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
+                $"{lobby.Name}\n{lobby.Players[0].Data["PlayerName"].Value}"; // should be lobby name
+            newLobby
+                .transform.GetChild(0)
+                .GetChild(1)
+                .GetComponent<Button>()
+                .onClick.AddListener(() => JoinLobby(lobby));
         }
-
-        newLobby.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
-            $"{lobby.Name}\n{hostname}"; // should be lobby name
-        newLobby
-            .transform.GetChild(0)
-            .GetChild(1)
-            .GetComponent<Button>()
-            .onClick.AddListener(() => JoinLobby(lobby));
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to create a UI for a lobby: {lobby.Name}");
+            Debug.LogException(e);
+        }
     }
 
     private void JoinLobby(Lobby lobby)
@@ -151,8 +201,30 @@ public class LobbyUi : MonoBehaviour
         LobbyManager.Instance.JoinLobby(lobby.Id);
     }
 
-    public void CreateGame()
+    public void CreateGame() => LobbyManager.Instance.CreateLobby(hostLobbyName.text);
+
+    public void OnNewPlayer(List<Player> playerList)
     {
-        LobbyManager.Instance.CreateLobby(hostLobbyName.text);
+        foreach (GameObject obj in _playerList)
+        {
+            Destroy(obj);
+        }
+
+        _currentYDownAmount = 0;
+        foreach (Player player in playerList)
+        {
+            GameObject newPlayer = Instantiate(newPlayerPrefab, lobbyMenu.transform);
+            newPlayer.GetComponent<RectTransform>().anchoredPosition = new Vector3(
+                0,
+                _currentYDownAmount,
+                0
+            );
+            newPlayer.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
+                player.Data["PlayerName"].Value;
+            _currentYDownAmount -= _yDownAmount;
+            _playerList.Add(newPlayer);
+        }
     }
+
+    public void GoToLobby() => ChangeView(lobbyMenu);
 }

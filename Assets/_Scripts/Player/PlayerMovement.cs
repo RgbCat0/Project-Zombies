@@ -1,11 +1,12 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace _Scripts.Player
 {
     [RequireComponent(typeof(Rigidbody))]
-    public class PlayerMovement : MonoBehaviour // fps movement (handles only movement)
+    public class PlayerMovement : NetworkBehaviour // fps movement (handles only movement)
     {
         private PlayerInputs _inputActions;
         private Rigidbody _rigidbody;

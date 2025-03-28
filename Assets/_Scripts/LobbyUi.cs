@@ -9,7 +9,7 @@ using UnityEngine.UI;
 using _Scripts;
 using Player = Unity.Services.Lobbies.Models.Player;
 
-public class LobbyUi : MonoBehaviour
+public class LobbyUi : MonoBehaviour // add status to the in game UI (for when clicking on create lobby etc)
 {
     [Header("Parent Objects")]
     [SerializeField]
@@ -54,7 +54,7 @@ public class LobbyUi : MonoBehaviour
     [SerializeField]
     private GameObject newPlayerPrefab;
 
-    private int _yDownAmount = 100;
+    private const int YDownAmount = 100;
     private int _currentYDownAmount;
     private List<GameObject> _playerList = new List<GameObject>();
 
@@ -111,7 +111,7 @@ public class LobbyUi : MonoBehaviour
     {
         try
         {
-            await LobbyManager.Instance.ChangeName(mainName.text);
+            await LobbyMisc.ChangeName(mainName.text);
             ChangeView(hostMenu);
         }
         catch (Exception e)
@@ -122,21 +122,23 @@ public class LobbyUi : MonoBehaviour
 
     public async void JoinMenu()
     {
-        try { }
+        try
+        {
+            await ChangeName(mainName.text);
+            ChangeView(joinMenu);
+            GetLobbies();
+        }
         catch (Exception e)
         {
             Debug.LogError($"Failed to join lobby: {e.Message}");
         }
-        await ChangeName(mainName.text);
-        ChangeView(joinMenu);
-        GetLobbies();
     }
 
     private async Task ChangeName(string newName)
     {
         try
         {
-            await LobbyManager.Instance.ChangeName(newName);
+            await LobbyMisc.ChangeName(newName);
         }
         catch (Exception e)
         {

@@ -3,13 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static _Scripts.LobbyMisc;
 
 namespace _Scripts
 {
@@ -30,8 +33,10 @@ namespace _Scripts
         [SerializeField]
         private GameObject playerPrefab;
 
-        [SerializeField,]
-        private List<GameObject> playerObjects;
+        [SerializeField]
+        private List<Player.Player> players = new();
+
+        private LobbyUi _lobbyUi; // caching
 
         public enum LogLevel
         {
@@ -62,6 +67,7 @@ namespace _Scripts
         {
             try
             {
+                _lobbyUi = GetComponent<LobbyUi>();
                 IsSignedIn = false;
                 NetworkManager.Singleton.ConnectionApprovalCallback += ApproveConnection;
                 await UnityServices.InitializeAsync();
@@ -114,18 +120,42 @@ namespace _Scripts
             CreateLobbyP(lobbyName);
         }
 
-        private async void CreateLobbyP(string lobbyName, bool isPrivate = false)
+        // private async void CreateLobbyP(string lobbyName) // Server Creating
+        private async void CreateLobbyP(string lobbyName, bool isPrivate = false) // THIS IS GETTING SO COMPLICATED
         {
             try
             {
-                var options = new CreateLobbyOptions { IsPrivate = isPrivate };
+                _lobbyUi.ChangeStatus("Creating Lobby...");
+                Allocation allocation = await RelayService.Instance.CreateAllocationAsync(
+                    maxPlayers
+                );
+                string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(
+                    allocation.AllocationId
+                );
+                var options = new CreateLobbyOptions
+                {
+                    IsPrivate = isPrivate,
+                    Data = new Dictionary<string, DataObject>
+                    {
+                        {
+                            "relayJoinCode",
+                            new DataObject(DataObject.VisibilityOptions.Public, relayJoinCode)
+                        }
+                    }
+                };
+                _lobbyUi.ChangeStatus("Starting Networking...");
+                var serverData = allocation.ToRelayServerData("dtls");
+                NetworkManager
+                    .Singleton.GetComponent<UnityTransport>()
+                    .SetRelayServerData(serverData);
+                NetworkManager.Singleton.StartHost();
                 Lobby = await LobbyService.Instance.CreateLobbyAsync(
                     lobbyName,
                     maxPlayers,
                     options
                 );
-                await RelayService.Instance.CreateAllocationAsync(maxPlayers);
-                NetworkManager.Singleton.StartHost();
+
+                _lobbyUi.ChangeStatus("Starting Relay service...");
                 Debug.Log(IsServer);
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerJoined += OnPlayerJoined;
@@ -134,10 +164,12 @@ namespace _Scripts
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
                 if (logLevel == LogLevel.All)
                     Debug.Log($"Created lobby {Lobby.Name}");
-                GetComponent<LobbyUi>().GoToLobby();
-                await LobbyMisc.UpdatePlayerNameInLobby(); // unity multiplayer service does not automatically update player name so this is a weird fix
-                GetComponent<LobbyUi>().OnNewPlayer(Lobby.Players);
-                SpawnNewPlayerObjectRpc(_playerClientId);
+                _lobbyUi.GoToLobby();
+                _lobbyUi.ChangeStatus("Updating player name...");
+                await UpdatePlayerNameInLobby(); // unity multiplayer service does not automatically update player name so this is a weird fix
+                _lobbyUi.OnNewPlayer(Lobby.Players);
+                // SpawnNewPlayerObjectRpc(_playerClientId);
+                _lobbyUi.ChangeStatus();
             }
             catch (Exception e)
             {
@@ -179,15 +211,14 @@ namespace _Scripts
         private void OnPlayerJoined(List<LobbyPlayerJoined> obj)
         {
             StartCoroutine(WaitForNameChange(obj[0]));
-            // GetComponent<LobbyUi>().OnNewPlayer(obj[0].Player.Data["PlayerName"].Value);
         }
 
         [Rpc(SendTo.Server)]
         private void SpawnNewPlayerObjectRpc(ulong playerUlongId)
         {
-            var newPlayer = Instantiate(playerPrefab);
-            playerObjects.Add(newPlayer);
-            newPlayer.GetComponent<Player.Player>().OnCreated(playerUlongId);
+            // var newPlayer = Instantiate(playerPrefab);
+            // playerObjects.Add(newPlayer);
+            // newPlayer.GetComponent<Player.Player>().OnCreated(playerUlongId);
         }
 
         public void JoinLobby(string lobbyId) => JoinLobbyP(lobbyId);
@@ -196,10 +227,22 @@ namespace _Scripts
         {
             try
             {
+                _lobbyUi.ChangeStatus("Joining Lobby...");
                 Lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
-                await LobbyMisc.UpdatePlayerNameInLobby();
-                GetComponent<LobbyUi>().GoToLobby();
-                GetComponent<LobbyUi>().OnNewPlayer(Lobby.Players);
+                _lobbyUi.ChangeStatus("Updating player name...");
+                await UpdatePlayerNameInLobby();
+                _lobbyUi.ChangeStatus("Joining Relay service...");
+                JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(
+                    Lobby.Data["relayJoinCode"].Value
+                );
+                var serverData = allocation.ToRelayServerData("dtls");
+                NetworkManager
+                    .Singleton.GetComponent<UnityTransport>()
+                    .SetRelayServerData(serverData);
+                NetworkManager.Singleton.StartClient();
+
+                _lobbyUi.GoToLobby();
+                _lobbyUi.OnNewPlayer(Lobby.Players);
 
                 if (logLevel == LogLevel.All)
                     Debug.Log($"Joined lobby {lobbyId}");
@@ -237,7 +280,7 @@ namespace _Scripts
         private void OnPlayerLeft(List<int> wot)
         {
             // output list of int to json in debug log
-            Debug.Log(JsonUtility.ToJson(wot)); // (because i have no idea what it gives.)
+            Debug.Log(JsonUtility.ToJson(wot)); // (because I have no idea what it gives.)
         }
 
         #endregion
@@ -261,11 +304,12 @@ namespace _Scripts
         }
         #endregion
         #region Misc
+        // ReSharper disable Unity.PerformanceAnalysis (this doesn't actually call it alot it just needs to keep checking if the player has a name)
         private IEnumerator WaitForNameChange(LobbyPlayerJoined obj)
         {
             while (obj.Player?.Data == null)
                 yield return null;
-            GetComponent<LobbyUi>().OnNewPlayer(Lobby.Players);
+            _lobbyUi.OnNewPlayer(Lobby.Players);
         }
 
         private void ApproveConnection(
@@ -280,6 +324,21 @@ namespace _Scripts
                 return;
             }
             response.Approved = true;
+        }
+
+        [Rpc(SendTo.Server)]
+        public void AddPlayerToList(Player.Player player)
+        {
+            players ??= new List<Player.Player>();
+            players.Add(player);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        private void SendOutToNotServer(List<Player.Player> newPlayers)
+        {
+            players ??= new List<Player.Player>();
+            players.Clear();
+            players = newPlayers;
         }
         #endregion
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -14,6 +15,10 @@ namespace _Scripts
         {
             string newName = AuthenticationService.Instance.PlayerName;
             string id = AuthenticationService.Instance.PlayerId;
+            // remove the #4040 from the end of the name
+            newName = newName.Remove(newName.IndexOf('#'));
+            // first letter to uppercase
+            newName = newName[0].ToString().ToUpper() + newName[1..];
             var newData = new UpdatePlayerOptions
             {
                 Data = new Dictionary<string, PlayerDataObject>
@@ -21,7 +26,8 @@ namespace _Scripts
                     {
                         "PlayerName",
                         new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, newName)
-                    }
+                    },
+                    // { "PlayerType", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, ) }
                 }
             };
 

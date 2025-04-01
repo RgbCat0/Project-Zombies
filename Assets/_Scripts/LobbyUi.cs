@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using TMPro;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using _Scripts;
 using Player = Unity.Services.Lobbies.Models.Player;
 
-public class LobbyUi : MonoBehaviour // add status to the in game UI (for when clicking on create lobby etc)
+public class LobbyUi : MonoBehaviour // add status to the in game UI (for when clicking on create lobby etc.)
 {
     [Header("Parent Objects")]
     [SerializeField]
@@ -58,11 +59,15 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
     private int _currentYDownAmount;
     private List<GameObject> _playerList = new List<GameObject>();
 
+    [SerializeField]
+    private TextMeshProUGUI statusText;
+
     private void Start() // Always starts in main menu
     {
         ChangeView();
         if (LobbyManager.Instance.IsSignedIn == false)
         {
+            ChangeStatus("Signing in...");
             StartCoroutine(WaitForSignIn());
             return;
         }
@@ -70,6 +75,7 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
         mainHost.interactable = false;
         mainJoin.interactable = false;
         SetupInputFields();
+        ChangeStatus();
     }
 
     private IEnumerator WaitForSignIn()
@@ -111,12 +117,15 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
     {
         try
         {
+            ChangeStatus("Updating name...");
             await LobbyMisc.ChangeName(mainName.text);
             ChangeView(hostMenu);
+            ChangeStatus();
         }
         catch (Exception e)
         {
             Debug.LogError($"Failed to change lobby: {e.Message}");
+            ChangeStatus("Failed to change name.", Color.red);
         }
     }
 
@@ -124,13 +133,16 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
     {
         try
         {
+            ChangeStatus("Updating name...");
             await ChangeName(mainName.text);
             ChangeView(joinMenu);
+            ChangeStatus("Getting lobbies...");
             GetLobbies();
         }
         catch (Exception e)
         {
             Debug.LogError($"Failed to join lobby: {e.Message}");
+            ChangeStatus("Failed to change name.", Color.red);
         }
     }
 
@@ -174,10 +186,11 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
         catch (Exception e)
         {
             Debug.LogError($"Failed to get lobbies: {e.Message}");
+            ChangeStatus("Failed to get lobbies.", Color.red);
         }
     }
 
-    private void CreateLobbyUi(Lobby lobby)
+    private void CreateLobbyUi(Lobby lobby) // Spawns a new player name holder
     {
         try
         {
@@ -192,6 +205,7 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
         }
         catch (Exception e)
         {
+            ChangeStatus("Failed to get new player.", Color.red);
             Debug.LogError($"Failed to create a UI for a lobby: {lobby.Name}");
             Debug.LogException(e);
         }
@@ -223,10 +237,18 @@ public class LobbyUi : MonoBehaviour // add status to the in game UI (for when c
             );
             newPlayer.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                 player.Data["PlayerName"].Value;
-            _currentYDownAmount -= _yDownAmount;
+            _currentYDownAmount -= YDownAmount;
             _playerList.Add(newPlayer);
         }
     }
 
     public void GoToLobby() => ChangeView(lobbyMenu);
+
+    public void ChangeStatus(string status = "", Color color = default)
+    {
+        if (color == default)
+            color = Color.white;
+        statusText.text = status;
+        statusText.color = color;
+    }
 }

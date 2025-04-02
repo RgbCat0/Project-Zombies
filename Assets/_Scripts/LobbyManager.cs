@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
@@ -34,7 +35,7 @@ namespace _Scripts
         private GameObject playerPrefab;
 
         [SerializeField]
-        private List<Player.Player> players = new();
+        private List<GameObject> players = new();
 
         private LobbyUi _lobbyUi; // caching
 
@@ -156,7 +157,6 @@ namespace _Scripts
                 );
 
                 _lobbyUi.ChangeStatus("Starting Relay service...");
-                Debug.Log(IsServer);
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerJoined += OnPlayerJoined;
                 callbacks.PlayerLeft += OnPlayerLeft;
@@ -194,11 +194,11 @@ namespace _Scripts
         {
             try
             {
-                var test = await LobbyService.Instance.QueryLobbiesAsync();
+                QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync();
 
                 if (logLevel == LogLevel.All)
-                    Debug.Log($"Got lobbies: {test.Results.Count}");
-                return test;
+                    Debug.Log($"Got lobbies: {response.Results.Count}");
+                return response;
             }
             catch (Exception e)
             {
@@ -240,7 +240,7 @@ namespace _Scripts
                     .Singleton.GetComponent<UnityTransport>()
                     .SetRelayServerData(serverData);
                 NetworkManager.Singleton.StartClient();
-
+                _lobbyUi.ChangeStatus();
                 _lobbyUi.GoToLobby();
                 _lobbyUi.OnNewPlayer(Lobby.Players);
 
@@ -255,20 +255,56 @@ namespace _Scripts
         }
         #endregion
         #region Disconnection
-        public void DisconnectLobby(string lobbyId) => DisconnectLobbyP(lobbyId);
+        public void DisconnectLobby() => DisconnectLobbyP();
 
-        private async void DisconnectLobbyP(string lobbyId)
+        private void DisconnectLobbyP()
         {
             try
             {
-                await LobbyService.Instance.RemovePlayerAsync(Lobby.Id, _playerId);
+                NetworkManager.Singleton.Shutdown();
+                RemovePlayerRpc(_playerId);
+
                 if (logLevel == LogLevel.All)
-                    Debug.Log($"Left lobby {lobbyId}");
+                    Debug.Log($"Left lobby.");
             }
             catch (Exception e)
             {
                 if (logLevel != LogLevel.None)
                     Debug.LogError($"Failed to leave lobby: {e.Message}");
+            }
+        }
+
+        [Rpc(SendTo.Server)]
+        private void RemovePlayerRpc(string playerId)
+        {
+            RemovePlayer(playerId);
+        }
+
+        private async void RemovePlayer(string playerId)
+        {
+            try
+            {
+                await LobbyService.Instance.RemovePlayerAsync(Lobby.Id, playerId);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        public void DestroyLobby() => DestroyLobbyP();
+
+        private async void DestroyLobbyP()
+        {
+            try
+            {
+                NetworkManager.Singleton.Shutdown();
+                await LobbyService.Instance.DeleteLobbyAsync(Lobby.Id);
+                _lobbyUi.ChangeStatus("Lobby Closed.", Color.yellow);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to destroy lobby: {e.Message}");
             }
         }
 
@@ -286,9 +322,10 @@ namespace _Scripts
         #endregion
         #region GameStarted
 
-        public void StartGame() => StartGameP();
+        public void StartGame() => StartGamePRpc();
 
-        private void StartGameP()
+        [Rpc(SendTo.Everyone)]
+        private void StartGamePRpc()
         {
             try
             {
@@ -326,19 +363,15 @@ namespace _Scripts
             response.Approved = true;
         }
 
-        [Rpc(SendTo.Server)]
-        public void AddPlayerToList(Player.Player player)
+        [Rpc(SendTo.Everyone)]
+        public void CheckForPlayersRpc()
         {
-            players ??= new List<Player.Player>();
-            players.Add(player);
-        }
-
-        [Rpc(SendTo.NotServer)]
-        private void SendOutToNotServer(List<Player.Player> newPlayers)
-        {
-            players ??= new List<Player.Player>();
-            players.Clear();
-            players = newPlayers;
+            foreach (Transform trans in GameObject.Find("PlayerParent").transform)
+            {
+                if (trans is null)
+                    continue;
+                players.Add(trans.gameObject);
+            }
         }
         #endregion
     }

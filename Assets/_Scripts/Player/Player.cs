@@ -6,13 +6,23 @@ namespace _Scripts.Player
 {
     public class Player : NetworkBehaviour
     {
-        private void Start() { }
+        private void Awake() { }
 
-        public void OnCreated(ulong playerId)
+        private void Start()
         {
-            // todo: change owner, set player name, etc.
-            NetworkObject.Spawn();
-            NetworkObject.ChangeOwnership(playerId);
+            if (!IsOwner)
+            {
+                enabled = false;
+                return;
+            }
+            ParentThisRpc();
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ParentThisRpc()
+        {
+            transform.parent = GameObject.Find("PlayerParent").transform;
+            LobbyManager.Instance.CheckForPlayersRpc();
         }
 
         public void OnLeaving()

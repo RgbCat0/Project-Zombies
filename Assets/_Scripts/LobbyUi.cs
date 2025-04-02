@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
+using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,6 +43,9 @@ namespace _Scripts
         [SerializeField]
         private Button lobbyDisconnect;
 
+        [SerializeField]
+        private Button startGame;
+
         [Header("Input Fields")]
         [SerializeField]
         private TMP_InputField mainName;
@@ -58,6 +62,7 @@ namespace _Scripts
         private const int YDownAmount = 100;
         private int _currentYDownAmount;
         private List<GameObject> _playerList = new List<GameObject>();
+        private List<GameObject> _lobbies = new();
 
         [SerializeField]
         private TextMeshProUGUI statusText;
@@ -167,7 +172,7 @@ namespace _Scripts
             view?.SetActive(true);
         }
 
-        private async void GetLobbies()
+        public async void GetLobbies()
         {
             try
             {
@@ -177,10 +182,18 @@ namespace _Scripts
                     Debug.Log("No lobbies found");
                     return;
                 }
+                if (_lobbies != null)
+                {
+                    foreach (GameObject obj in _lobbies)
+                    {
+                        Destroy(obj);
+                    }
+                }
                 lobbies.Results.ForEach(lobby =>
                 {
                     Debug.Log($"Lobby: {lobby.Name} - {lobby.Id}");
-                    CreateLobbyUi(lobby);
+                    GameObject real = CreateLobbyUi(lobby);
+                    _lobbies.Add(real);
                 });
             }
             catch (Exception e)
@@ -196,7 +209,7 @@ namespace _Scripts
         /// </summary>
         /// <param name="lobby">Specifies which lobby is being used.</param>
         /// <exception cref="Exception">Thrown when the UI fails to create a lobby.</exception>
-        private void CreateLobbyUi(Lobby lobby) // Spawns a new Prefab for each lobby
+        private GameObject CreateLobbyUi(Lobby lobby) // Spawns a new Prefab for each lobby
         {
             try
             {
@@ -208,6 +221,7 @@ namespace _Scripts
                     .GetChild(1)
                     .GetComponent<Button>()
                     .onClick.AddListener(() => JoinLobby(lobby));
+                return newLobby;
             }
             catch (Exception e)
             {
@@ -215,6 +229,7 @@ namespace _Scripts
                 Debug.LogError($"Failed to create a UI for a lobby: {lobby.Name}");
                 Debug.LogException(e);
             }
+            return null;
         }
 
         private void JoinLobby(Lobby lobby)
@@ -248,7 +263,14 @@ namespace _Scripts
             }
         }
 
-        public void GoToLobby() => ChangeView(lobbyMenu);
+        public void GoToLobby()
+        {
+            ChangeView(lobbyMenu);
+            bool isServer = NetworkManager.Singleton.IsServer;
+            lobbyDelete.gameObject.SetActive(isServer);
+            lobbyDisconnect.gameObject.SetActive(!isServer);
+            startGame.gameObject.SetActive(isServer);
+        }
 
         public void ChangeStatus(string status = "", Color color = default)
         {

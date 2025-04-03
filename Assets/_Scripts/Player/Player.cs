@@ -15,6 +15,7 @@ namespace _Scripts.Player
                 return;
             }
             ParentThisRpc();
+
         }
 
         [Rpc(SendTo.Server)]
@@ -22,7 +23,12 @@ namespace _Scripts.Player
         {
             transform.parent = GameObject.Find("PlayerParent").transform;
             LobbyManager.Instance.CheckForPlayersRpc();
-            DontDestroyOnLoad(transform.parent.gameObject); // this holds all players
+            DDolThisRpc();
+        }
+        [Rpc(SendTo.Everyone)]
+        private void DDolThisRpc()
+        {
+            DontDestroyOnLoad(transform.parent.gameObject);
         }
 
         public void OnLeaving()

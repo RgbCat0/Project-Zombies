@@ -240,8 +240,9 @@ namespace _Scripts
 
         public void CreateGame() => LobbyManager.Instance.CreateLobby(hostLobbyName.text);
 
-        public void OnNewPlayer(List<Unity.Services.Lobbies.Models.Player> playerList)
+        public void OnNewPlayer()
         {
+            var playerList = LobbyManager.Instance.Lobby.Players;
             foreach (GameObject obj in _playerList)
             {
                 Destroy(obj);

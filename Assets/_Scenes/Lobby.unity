@@ -2641,10 +2641,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  maxPlayers: 4
   playerPrefab: {fileID: 163510238107069518, guid: a1a10f14f39a9f34b909ae5a90fde66e, type: 3}
   players: []
-  logLevel: 1
 --- !u!4 &1302731303
 Transform:
   m_ObjectHideFlags: 0
@@ -3418,7 +3416,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1302731302}
         m_TargetAssemblyTypeName: _Scripts.LobbyManager, Assembly-CSharp
-        m_MethodName: StartGame
+        m_MethodName: StartGameRpc
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

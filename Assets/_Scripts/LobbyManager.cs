@@ -129,6 +129,7 @@ namespace _Scripts
 
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerLeft += OnPlayerLeft;
+                callbacks.PlayerJoined +=  ctx => StartCoroutine(CallbacksOnPlayerJoined(ctx));
                 callbacks.KickedFromLobby += OnKickedFromLobby;
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
 
@@ -155,6 +156,15 @@ namespace _Scripts
             }
         }
 
+        private IEnumerator CallbacksOnPlayerJoined(List<LobbyPlayerJoined> obj)
+        {
+            while(obj[0].Player.Data?["PlayerName"] == null) // waits for the data to come in
+                yield return null;
+            _lobbyUi.OnNewPlayer();
+        }
+
+
+
         private async void JoinLobbyP(string lobbyId) // Client Joining
         {
             try
@@ -168,7 +178,13 @@ namespace _Scripts
 
                 Status("Joining Unity Networking...");
                 StartNetworking(serverData, false);
-
+                
+                var callbacks = new LobbyEventCallbacks();
+                callbacks.PlayerLeft += OnPlayerLeft;
+                callbacks.PlayerJoined += ctx => StartCoroutine(CallbacksOnPlayerJoined(ctx));
+                callbacks.KickedFromLobby += OnKickedFromLobby;
+                await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
+                
                 Status("Updating Name...");
                 await UpdatePlayerNameInLobby();
 
@@ -185,14 +201,12 @@ namespace _Scripts
         {
             Status();
             _lobbyUi.GoToLobby();
-            UpdateNamesRpc();
+            _lobbyUi.OnNewPlayer();
         }
 
-        [Rpc(SendTo.Everyone)]
-        private void UpdateNamesRpc()
-        {
-            _lobbyUi.OnNewPlayer(Lobby.Players);
-        }
+        
+
+
         #endregion
         #region Disconnection
         public void DisconnectLobby() => DisconnectLobbyP();
@@ -264,7 +278,9 @@ namespace _Scripts
         #endregion
         #region GameStarted
 
-        public void StartGame() => StartCoroutine(GameStartCountdown());
+        [Rpc(SendTo.Everyone)]
+        public void StartGameRpc() => StartCoroutine(GameStartCountdown());
+
 
         [Rpc(SendTo.Server)]
         private void StartGamePRpc()

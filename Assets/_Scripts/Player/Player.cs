@@ -15,7 +15,7 @@ namespace _Scripts.Player
                 return;
             }
             ParentThisRpc();
-
+            // NetworkManager.SceneManager.OnLoadComplete += GameManager.Instance.SceneManagerOnOnLoadComplete;
         }
 
         [Rpc(SendTo.Server)]

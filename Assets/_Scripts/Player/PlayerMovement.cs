@@ -25,10 +25,14 @@ namespace _Scripts.Player
         [Header("Movement")]
         [SerializeField, FormerlySerializedAs("moveSpeed")]
         private float acceleration;
+        [SerializeField]
+        private float airAcceleration;
 
         [SerializeField]
         private float maxSpeed;
         private bool _canJump = true;
+        private bool _isJumping;
+        private bool _jumpCoroutine;
 
         [SerializeField]
         private float jumpForce;
@@ -63,7 +67,8 @@ namespace _Scripts.Player
                 _mouseInput = ctx.ReadValue<Vector2>() * sensitivity;
             _inputActions.Player.Move.canceled += _ => _movementInput = Vector2.zero;
             _inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
-            _inputActions.Player.Jump.performed += _ => Jump();
+            _inputActions.Player.Jump.performed += _ => _isJumping = true;
+            _inputActions.Player.Jump.canceled += _ => _isJumping = false;
         }
 
         private void Update()
@@ -77,6 +82,9 @@ namespace _Scripts.Player
         private void FixedUpdate()
         {
             HandleMovement();
+            Jump();
+            if(_isGrounded && !_jumpCoroutine && !_canJump)
+                StartCoroutine(CoolDownJump());
         }
 
         private void HandleMouse()
@@ -97,7 +105,7 @@ namespace _Scripts.Player
         {
             Vector3 moveDirection =
                 transform.right * _movementInput.x + transform.forward * _movementInput.y;
-            _rigidbody.AddForce(moveDirection.normalized * acceleration, ForceMode.Force);
+            _rigidbody.AddForce(moveDirection.normalized * (_isGrounded ? acceleration : airAcceleration) , ForceMode.Force);
         }
 
         private bool CheckGrounded() =>
@@ -121,17 +129,20 @@ namespace _Scripts.Player
 
         private void Jump()
         {
-            if (!_isGrounded || !_canJump)
+            if (!_isGrounded || !_canJump || !_isJumping)
                 return;
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             _canJump = false;
-            StartCoroutine(CoolDownJump());
+            
         }
 
         private IEnumerator CoolDownJump()
         {
+            _jumpCoroutine = true; 
+            yield return new WaitUntil(() => _isGrounded);
             yield return new WaitForSeconds(jumpCooldown);
             _canJump = true;
+            _jumpCoroutine = false;
         }
     }
 }

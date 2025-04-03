@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 298647717}
   - component: {fileID: 298647716}
   - component: {fileID: 298647715}
+  - component: {fileID: 298647722}
   - component: {fileID: 298647719}
   - component: {fileID: 298647720}
   - component: {fileID: 298647721}
@@ -414,12 +415,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c43f4a64d3135a46ba7f6e20002bf51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   sensitivity: {x: 0.1, y: 0.1}
   maxLookAngle: 80
   acceleration: 15
+  airAcceleration: 0
   maxSpeed: 10
   jumpForce: 4
-  jumpCooldown: 0.2
+  jumpCooldown: 1
   playerHeight: 1.2
   groundDrag: 1.5
   groundMask:
@@ -472,6 +475,31 @@ MonoBehaviour:
   m_IgnoreFromBuild: 1
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &298647722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298647714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2370929337
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

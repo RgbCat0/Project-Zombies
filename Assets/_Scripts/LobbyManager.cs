@@ -26,6 +26,7 @@ namespace _Scripts
         private Allocation _allocation;
         private string _playerId;
         private string _joinCode;
+        public Dictionary<ulong, string> ConvertedIds = new Dictionary<ulong, string>();
 
         [SerializeField]
         private GameObject playerPrefab;
@@ -133,8 +134,8 @@ namespace _Scripts
                 callbacks.KickedFromLobby += OnKickedFromLobby;
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
 
-                Status("Updating player name...");
-                await UpdatePlayerNameInLobby();
+                Status("Updating player Data...");
+                await UpdatePlayerDataInLobby();
 
                 Log($"Successfully Created lobby {Lobby.Name}");
                 After();
@@ -178,6 +179,7 @@ namespace _Scripts
 
                 Status("Joining Unity Networking...");
                 StartNetworking(serverData, false);
+
                 
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerLeft += OnPlayerLeft;
@@ -185,8 +187,8 @@ namespace _Scripts
                 callbacks.KickedFromLobby += OnKickedFromLobby;
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
                 
-                Status("Updating Name...");
-                await UpdatePlayerNameInLobby();
+                Status("Updating Player Data...");
+                await UpdatePlayerDataInLobby();
 
                 Log($"Successfully Joined lobby {Lobby.Name}");
                 After();
@@ -289,7 +291,9 @@ namespace _Scripts
             {
                 if (NetworkManager.Singleton.IsServer)
                     GameStarted = true;
+                GameManager.Instance.LoadInPlayers();
                 NetworkManager.SceneManager.LoadScene("Main", LoadSceneMode.Single);
+                
             }
             catch (Exception e)
             {
@@ -300,6 +304,7 @@ namespace _Scripts
 
         private IEnumerator GameStartCountdown()
         {
+            MatchIds();
             Status("Game Starting in 3 seconds...");
             yield return new WaitForSeconds(1);
             Status("Game Starting in 2 seconds...");
@@ -307,6 +312,15 @@ namespace _Scripts
             Status("Game Starting in 1 seconds...");
             yield return new WaitForSeconds(1);
             StartGamePRpc();
+        }
+
+        private void MatchIds()
+        {
+            foreach (var player in Lobby.Players)
+            {
+                var ulongId = LobbyClientIdToNetworkManagerClientId(player.Id);
+                ConvertedIds.Add(ulongId, player.Id);
+            }
         }
         #endregion
         #region Misc
@@ -323,6 +337,7 @@ namespace _Scripts
                 return;
             }
             response.Approved = true;
+            
         }
 
         [Rpc(SendTo.Everyone)]

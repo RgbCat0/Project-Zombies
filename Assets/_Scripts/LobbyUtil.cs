@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -13,7 +14,7 @@ namespace _Scripts
     {
         public static LobbyUi LobbyUi;
 
-        public static async Task UpdatePlayerNameInLobby()
+        public static async Task UpdatePlayerDataInLobby()
         {
             string newName = AuthenticationService.Instance.PlayerName;
             string id = AuthenticationService.Instance.PlayerId;
@@ -28,8 +29,10 @@ namespace _Scripts
                     {
                         "PlayerName",
                         new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, newName)
-                    }
+                    },
+                    { "UlongId", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, NetworkManager.Singleton.LocalClientId.ToString()) }
                 }
+                
             };
 
             await LobbyService.Instance.UpdatePlayerAsync(
@@ -37,7 +40,7 @@ namespace _Scripts
                 id,
                 newData
             );
-            Log($"Updated player name in lobby to {newName}");
+            Log($"Updated player Data in lobby of user: {newName}");
         }
 
         public static async Task ChangeName(string newName)
@@ -87,5 +90,29 @@ namespace _Scripts
             LobbyUi.ChangeStatus(text, color);
         }
         #endregion
+
+        public static string NetworkManagerClientIdToLobbyClientId(ulong clientId)
+        {
+            return LobbyManager.Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString()).Id;
+        }
+
+        public static ulong LobbyClientIdToNetworkManagerClientId(string clientId)
+        {
+            var test= LobbyManager.Instance.Lobby.Players.Find(w => w.Id == clientId).Data["UlongId"].Value;
+            return Convert.ToUInt64(test);
+
+
+        }
+
+        public static string NetworkManagerClientIdToPlayerName(ulong clientId)
+        {
+            var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString());
+            return player.Data["PlayerName"].Value;
+        }
+        public static string GetPlayerNameById(string id)
+        {
+            var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);
+            return player.Data["PlayerName"].Value;
+        }
     }
 }

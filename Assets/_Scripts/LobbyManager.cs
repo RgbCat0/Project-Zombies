@@ -2,18 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
-using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static _Scripts.LobbyMisc;
+using static _Scripts.LobbyNetworking;
+using static _Scripts.LobbyUtil;
 
 namespace _Scripts
 {
@@ -23,12 +22,9 @@ namespace _Scripts
         public bool IsSignedIn { get; private set; }
         private bool GameStarted { get; set; }
 
-        [SerializeField]
-        private int maxPlayers = 4;
-
         public Lobby Lobby { get; private set; }
+        private Allocation _allocation;
         private string _playerId;
-        private ulong _playerClientId;
         private string _joinCode;
 
         [SerializeField]
@@ -38,17 +34,6 @@ namespace _Scripts
         private List<GameObject> players = new();
 
         private LobbyUi _lobbyUi; // caching
-
-        public enum LogLevel
-        {
-            Verbose,
-            All,
-            Error,
-            None
-        }
-
-        public LogLevel logLevel = LogLevel.Verbose;
-
         #region Insance
         private void Awake()
         {
@@ -69,6 +54,7 @@ namespace _Scripts
             try
             {
                 _lobbyUi = GetComponent<LobbyUi>();
+                LobbyUtil.LobbyUi = _lobbyUi; // set the static reference
                 IsSignedIn = false;
                 NetworkManager.Singleton.ConnectionApprovalCallback += ApproveConnection;
                 await UnityServices.InitializeAsync();
@@ -76,16 +62,9 @@ namespace _Scripts
             }
             catch (Exception e)
             {
-                if (logLevel != LogLevel.None)
-                    Debug.LogException(e);
+                Log("Failed to initialize lobby manager: " + e.Message, LogType.Error);
+                Status("Failed to initialize lobby manager.", Color.red);
             }
-        }
-
-        private void LogIt(string log, LogLevel chosen, LogType logType)
-        {
-            // call this method to choose correct log level (example if loglevel == error then only error logs will be shown and if verbose show verbose, all and error)
-            if (logLevel <= chosen)
-                Debug.Log(log);
         }
 
         private async Task SignIn()
@@ -96,97 +75,13 @@ namespace _Scripts
                 if (AuthenticationService.Instance.IsSignedIn)
                     IsSignedIn = true;
                 _playerId = AuthenticationService.Instance.PlayerId;
-                _playerClientId = NetworkManager.Singleton.LocalClientId;
             }
             catch (Exception e)
             {
                 IsSignedIn = false;
-                if (logLevel != LogLevel.None)
-                    Debug.LogError($"Sign in failed: {e.Message}");
+                Log($"Sign in failed: {e.Message}", LogType.Error);
             }
-            if (logLevel == LogLevel.All)
-                Debug.Log($"Signed in as {AuthenticationService.Instance.PlayerName}");
-        }
-        #endregion
-        #region Creating
-        /// <summary>
-        /// This method creates a lobby and makes this player the host.
-        /// </summary>
-        /// <exception cref="LobbyServiceException">The lobby service itself errored.</exception>
-        /// <exception cref="NullReferenceException">Something is not assigned.</exception>
-        /// <remarks>This is a public void which calls a private async method.</remarks>
-        /// <param name="lobbyName">Name for the lobby</param>
-        public void CreateLobby(string lobbyName)
-        {
-            CreateLobbyP(lobbyName);
-        }
-
-        // private async void CreateLobbyP(string lobbyName) // Server Creating
-        private async void CreateLobbyP(string lobbyName, bool isPrivate = false) // THIS IS GETTING SO COMPLICATED
-        {
-            try
-            {
-                _lobbyUi.ChangeStatus("Creating Lobby...");
-                Allocation allocation = await RelayService.Instance.CreateAllocationAsync(
-                    maxPlayers
-                );
-                string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(
-                    allocation.AllocationId
-                );
-                var options = new CreateLobbyOptions
-                {
-                    IsPrivate = isPrivate,
-                    Data = new Dictionary<string, DataObject>
-                    {
-                        {
-                            "relayJoinCode",
-                            new DataObject(DataObject.VisibilityOptions.Public, relayJoinCode)
-                        }
-                    }
-                };
-                _lobbyUi.ChangeStatus("Starting Networking...");
-                var serverData = allocation.ToRelayServerData("dtls");
-                NetworkManager
-                    .Singleton.GetComponent<UnityTransport>()
-                    .SetRelayServerData(serverData);
-                NetworkManager.Singleton.StartHost();
-                Lobby = await LobbyService.Instance.CreateLobbyAsync(
-                    lobbyName,
-                    maxPlayers,
-                    options
-                );
-
-                _lobbyUi.ChangeStatus("Starting Relay service...");
-                var callbacks = new LobbyEventCallbacks();
-                callbacks.PlayerJoined += OnPlayerJoined;
-                callbacks.PlayerLeft += OnPlayerLeft;
-                callbacks.KickedFromLobby += OnKickedFromLobby;
-                await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
-                if (logLevel == LogLevel.All)
-                    Debug.Log($"Created lobby {Lobby.Name}");
-                _lobbyUi.GoToLobby();
-                _lobbyUi.ChangeStatus("Updating player name...");
-                await UpdatePlayerNameInLobby(); // unity multiplayer service does not automatically update player name so this is a weird fix
-                _lobbyUi.OnNewPlayer(Lobby.Players);
-                // SpawnNewPlayerObjectRpc(_playerClientId);
-                _lobbyUi.ChangeStatus();
-            }
-            catch (Exception e)
-            {
-                if (logLevel == LogLevel.None)
-                    return;
-                switch (e)
-                {
-                    case LobbyServiceException:
-                        Debug.LogError($"Failed to create lobby: {e.Message}");
-                        break;
-                    case NullReferenceException:
-                        Debug.LogError(
-                            $"Failed to find something while creating lobby: {e.Message}"
-                        );
-                        break;
-                }
-            }
+            Log($"Signed in as {AuthenticationService.Instance.PlayerName}");
         }
         #endregion
         #region Joining
@@ -195,63 +90,108 @@ namespace _Scripts
             try
             {
                 QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync();
-
-                if (logLevel == LogLevel.All)
-                    Debug.Log($"Got lobbies: {response.Results.Count}");
+                Log($"Got lobbies: {response.Results.Count}");
                 return response;
             }
             catch (Exception e)
             {
-                if (logLevel is LogLevel.Error or LogLevel.All)
-                    Debug.LogError($"Failed to get lobbies: {e.Message}");
+                Log($"Failed to get lobbies: {e.Message}", LogType.Error);
                 return null;
             }
         }
 
-        private void OnPlayerJoined(List<LobbyPlayerJoined> obj)
-        {
-            StartCoroutine(WaitForNameChange(obj[0]));
-        }
-
-        [Rpc(SendTo.Server)]
-        private void SpawnNewPlayerObjectRpc(ulong playerUlongId)
-        {
-            // var newPlayer = Instantiate(playerPrefab);
-            // playerObjects.Add(newPlayer);
-            // newPlayer.GetComponent<Player.Player>().OnCreated(playerUlongId);
-        }
+        #endregion
+        #region Creating and Joining
+        /// <summary>
+        /// This method creates a lobby and makes this player the host.
+        /// </summary>
+        /// <exception cref="LobbyServiceException">The lobby service itself errored.</exception>
+        /// <exception cref="NullReferenceException">Something is not assigned.</exception>
+        /// <remarks>This is a public void which calls a private async method.</remarks>
+        /// <param name="lobbyName">Name for the lobby</param>
+        public void CreateLobby(string lobbyName) => CreateLobbyP(lobbyName);
 
         public void JoinLobby(string lobbyId) => JoinLobbyP(lobbyId);
+
+        // private async void CreateLobbyP(string lobbyName) // Server Creating
+        private async void CreateLobbyP(string lobbyName, bool isPrivate = false) // THIS IS GETTING SO COMPLICATED
+        {
+            try
+            {
+                Status("Starting Unity Relay service...");
+                (Allocation, string, RelayServerData) tuple = await StartHostAllocation(4);
+
+                Status("Starting Unity Networking...");
+                StartNetworking(tuple.Item3, true);
+
+                Status("Starting Unity Lobby service...");
+                Lobby = await StartHostLobby(isPrivate, lobbyName, tuple.Item2);
+
+                var callbacks = new LobbyEventCallbacks();
+                callbacks.PlayerLeft += OnPlayerLeft;
+                callbacks.KickedFromLobby += OnKickedFromLobby;
+                await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
+
+                Status("Updating player name...");
+                await UpdatePlayerNameInLobby();
+
+                Log($"Successfully Created lobby {Lobby.Name}");
+                After();
+            }
+            catch (Exception e)
+            {
+                switch (e)
+                {
+                    case LobbyServiceException:
+                        Log($"Failed to create lobby: {e.Message}", LogType.Error);
+                        break;
+                    case NullReferenceException:
+                        Log(
+                            $"Failed to find something while creating lobby: {e.Message}",
+                            LogType.Error
+                        );
+                        break;
+                }
+            }
+        }
 
         private async void JoinLobbyP(string lobbyId) // Client Joining
         {
             try
             {
-                _lobbyUi.ChangeStatus("Joining Lobby...");
-                Lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
-                _lobbyUi.ChangeStatus("Updating player name...");
-                await UpdatePlayerNameInLobby();
-                _lobbyUi.ChangeStatus("Joining Relay service...");
-                JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(
-                    Lobby.Data["relayJoinCode"].Value
-                );
-                var serverData = allocation.ToRelayServerData("dtls");
-                NetworkManager
-                    .Singleton.GetComponent<UnityTransport>()
-                    .SetRelayServerData(serverData);
-                NetworkManager.Singleton.StartClient();
-                _lobbyUi.ChangeStatus();
-                _lobbyUi.GoToLobby();
-                _lobbyUi.OnNewPlayer(Lobby.Players);
+                Status("Joining Lobby...");
+                Lobby = await StartClientLobby(lobbyId);
 
-                if (logLevel == LogLevel.All)
-                    Debug.Log($"Joined lobby {lobbyId}");
+                Status("Joining Relay service...");
+                string relayJoinCode = Lobby.Data["relayJoinCode"].Value;
+                RelayServerData serverData = await StartClientAllocation(relayJoinCode);
+
+                Status("Joining Unity Networking...");
+                StartNetworking(serverData, false);
+
+                Status("Updating Name...");
+                await UpdatePlayerNameInLobby();
+
+                Log($"Successfully Joined lobby {Lobby.Name}");
+                After();
             }
             catch (Exception e)
             {
-                if (logLevel != LogLevel.None)
-                    Debug.LogError($"Failed to join lobby: {e.Message}");
+                Log($"Failed to join lobby: {e.Message}", LogType.Error);
             }
+        }
+
+        private void After()
+        {
+            Status();
+            _lobbyUi.GoToLobby();
+            UpdateNamesRpc();
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void UpdateNamesRpc()
+        {
+            _lobbyUi.OnNewPlayer(Lobby.Players);
         }
         #endregion
         #region Disconnection
@@ -261,20 +201,18 @@ namespace _Scripts
         {
             try
             {
+                Status("Leaving Lobby...");
                 NetworkManager.Singleton.Shutdown();
                 RemovePlayerRpc(_playerId);
-
-                if (logLevel == LogLevel.All)
-                    Debug.Log($"Left lobby.");
+                Log("Left lobby.");
             }
             catch (Exception e)
             {
-                if (logLevel != LogLevel.None)
-                    Debug.LogError($"Failed to leave lobby: {e.Message}");
+                Log($"Failed to leave lobby: {e.Message}", LogType.Error);
             }
         }
 
-        [Rpc(SendTo.Server)]
+        [Rpc(SendTo.Server)] // only the server can remove players.
         private void RemovePlayerRpc(string playerId)
         {
             RemovePlayer(playerId);
@@ -285,6 +223,8 @@ namespace _Scripts
             try
             {
                 await LobbyService.Instance.RemovePlayerAsync(Lobby.Id, playerId);
+                Lobby = null;
+                Status("Left Lobby.", Color.yellow);
             }
             catch (Exception e)
             {
@@ -300,7 +240,8 @@ namespace _Scripts
             {
                 NetworkManager.Singleton.Shutdown();
                 await LobbyService.Instance.DeleteLobbyAsync(Lobby.Id);
-                _lobbyUi.ChangeStatus("Lobby Closed.", Color.yellow);
+                Status("Lobby Closed.", Color.yellow);
+                Lobby = null;
             }
             catch (Exception e)
             {
@@ -310,44 +251,49 @@ namespace _Scripts
 
         private void OnKickedFromLobby()
         {
-            throw new NotImplementedException();
+            Log("Player kicking not implemented yet.", LogType.Warning);
         }
 
         private void OnPlayerLeft(List<int> wot)
         {
+            Log("Player leaving Not implemented yet.", LogType.Warning);
             // output list of int to json in debug log
-            Debug.Log(JsonUtility.ToJson(wot)); // (because I have no idea what it gives.)
+            // Debug.Log(JsonUtility.ToJson(wot)); // (because I have no idea what it gives.)
         }
 
         #endregion
         #region GameStarted
 
-        public void StartGame() => StartGamePRpc();
+        public void StartGame() => StartCoroutine(GameStartCountdown());
 
-        [Rpc(SendTo.Everyone)]
+        [Rpc(SendTo.Server)]
         private void StartGamePRpc()
         {
             try
             {
                 if (NetworkManager.Singleton.IsServer)
                     GameStarted = true;
-
-                SceneManager.LoadScene("Main");
+                NetworkManager.SceneManager.LoadScene("Main", LoadSceneMode.Single);
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to start game: {e.Message}");
+                Log($"Failed to start game: {e.Message}", LogType.Error);
+                Status("Failed to start game.", Color.red);
             }
+        }
+
+        private IEnumerator GameStartCountdown()
+        {
+            Status("Game Starting in 3 seconds...");
+            yield return new WaitForSeconds(1);
+            Status("Game Starting in 2 seconds...");
+            yield return new WaitForSeconds(1);
+            Status("Game Starting in 1 seconds...");
+            yield return new WaitForSeconds(1);
+            StartGamePRpc();
         }
         #endregion
         #region Misc
-        // ReSharper disable Unity.PerformanceAnalysis (this doesn't actually call it alot it just needs to keep checking if the player has a name)
-        private IEnumerator WaitForNameChange(LobbyPlayerJoined obj)
-        {
-            while (obj.Player?.Data == null)
-                yield return null;
-            _lobbyUi.OnNewPlayer(Lobby.Players);
-        }
 
         private void ApproveConnection(
             NetworkManager.ConnectionApprovalRequest request,
@@ -373,6 +319,16 @@ namespace _Scripts
                 players.Add(trans.gameObject);
             }
         }
+
+        private void OnApplicationQuit()
+        {
+            Log("Application quitting...");
+            if (!IsServer)
+                return;
+            LobbyService.Instance.DeleteLobbyAsync(Lobby.Id);
+            NetworkManager.Shutdown();
+        }
+
         #endregion
     }
 }

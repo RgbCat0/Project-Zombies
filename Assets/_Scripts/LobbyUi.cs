@@ -7,7 +7,7 @@ using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
-using static _Scripts.LobbyMisc;
+using static _Scripts.LobbyUtil;
 
 namespace _Scripts
 {
@@ -155,7 +155,7 @@ namespace _Scripts
         {
             try
             {
-                await LobbyMisc.ChangeName(newName);
+                await LobbyUtil.ChangeName(newName);
             }
             catch (Exception e)
             {

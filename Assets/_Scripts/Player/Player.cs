@@ -1,4 +1,3 @@
-using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -23,6 +22,7 @@ namespace _Scripts.Player
         {
             transform.parent = GameObject.Find("PlayerParent").transform;
             LobbyManager.Instance.CheckForPlayersRpc();
+            DontDestroyOnLoad(transform.parent.gameObject); // this holds all players
         }
 
         public void OnLeaving()

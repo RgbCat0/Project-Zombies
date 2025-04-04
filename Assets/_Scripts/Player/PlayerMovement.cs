@@ -25,6 +25,13 @@ namespace _Scripts.Player
         [Header("Movement")]
         [SerializeField, FormerlySerializedAs("moveSpeed")]
         private float acceleration;
+
+        [SerializeField]
+        private float sideAcceleration;
+
+        [SerializeField]
+        private float backwardAcceleration;
+
         [SerializeField]
         private float airAcceleration;
 
@@ -83,7 +90,7 @@ namespace _Scripts.Player
         {
             HandleMovement();
             Jump();
-            if(_isGrounded && !_jumpCoroutine && !_canJump)
+            if (_isGrounded && !_jumpCoroutine && !_canJump)
                 StartCoroutine(CoolDownJump());
         }
 
@@ -105,7 +112,18 @@ namespace _Scripts.Player
         {
             Vector3 moveDirection =
                 transform.right * _movementInput.x + transform.forward * _movementInput.y;
-            _rigidbody.AddForce(moveDirection.normalized * (_isGrounded ? acceleration : airAcceleration) , ForceMode.Force);
+            float newAccel = airAcceleration;
+            if (_isGrounded)
+            {
+                if (_movementInput.y < 0)
+                    newAccel = backwardAcceleration;
+                else if (_movementInput.x != 0)
+                    newAccel = sideAcceleration;
+                else
+                    newAccel = acceleration;
+            }
+
+            _rigidbody.AddForce(moveDirection.normalized * newAccel, ForceMode.Force);
         }
 
         private bool CheckGrounded() =>
@@ -133,12 +151,11 @@ namespace _Scripts.Player
                 return;
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             _canJump = false;
-            
         }
 
         private IEnumerator CoolDownJump()
         {
-            _jumpCoroutine = true; 
+            _jumpCoroutine = true;
             yield return new WaitUntil(() => _isGrounded);
             yield return new WaitForSeconds(jumpCooldown);
             _canJump = true;

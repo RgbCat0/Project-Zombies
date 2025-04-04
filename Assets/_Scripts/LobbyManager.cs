@@ -130,7 +130,7 @@ namespace _Scripts
 
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerLeft += OnPlayerLeft;
-                callbacks.PlayerJoined +=  ctx => StartCoroutine(CallbacksOnPlayerJoined(ctx));
+                callbacks.PlayerJoined += ctx => StartCoroutine(CallbacksOnPlayerJoined(ctx));
                 callbacks.KickedFromLobby += OnKickedFromLobby;
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
 
@@ -159,12 +159,10 @@ namespace _Scripts
 
         private IEnumerator CallbacksOnPlayerJoined(List<LobbyPlayerJoined> obj)
         {
-            while(obj[0].Player.Data?["PlayerName"] == null) // waits for the data to come in
+            while (obj[0].Player.Data?["PlayerName"] == null) // waits for the data to come in
                 yield return null;
             _lobbyUi.OnNewPlayer();
         }
-
-
 
         private async void JoinLobbyP(string lobbyId) // Client Joining
         {
@@ -179,14 +177,14 @@ namespace _Scripts
 
                 Status("Joining Unity Networking...");
                 StartNetworking(serverData, false);
+                await AwaitIsListening();
 
-                
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerLeft += OnPlayerLeft;
                 callbacks.PlayerJoined += ctx => StartCoroutine(CallbacksOnPlayerJoined(ctx));
                 callbacks.KickedFromLobby += OnKickedFromLobby;
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
-                
+
                 Status("Updating Player Data...");
                 await UpdatePlayerDataInLobby();
 
@@ -199,15 +197,21 @@ namespace _Scripts
             }
         }
 
+        private Task AwaitIsListening()
+        {
+            while (!NetworkManager.Singleton.IsConnectedClient)
+            {
+                Debug.Log("Waiting for client to connect...");
+            }
+            return Task.CompletedTask;
+        }
+
         private void After()
         {
             Status();
             _lobbyUi.GoToLobby();
             _lobbyUi.OnNewPlayer();
         }
-
-        
-
 
         #endregion
         #region Disconnection
@@ -283,7 +287,6 @@ namespace _Scripts
         [Rpc(SendTo.Everyone)]
         public void StartGameRpc() => StartCoroutine(GameStartCountdown());
 
-
         [Rpc(SendTo.Server)]
         private void StartGamePRpc()
         {
@@ -293,7 +296,6 @@ namespace _Scripts
                     GameStarted = true;
                 GameManager.Instance.LoadInPlayers();
                 NetworkManager.SceneManager.LoadScene("Main", LoadSceneMode.Single);
-                
             }
             catch (Exception e)
             {
@@ -316,10 +318,16 @@ namespace _Scripts
 
         private void MatchIds()
         {
+            ConvertedIds.Clear();
+            Debug.Log(Lobby.Players.Count);
+            var passcount = 0;
             foreach (var player in Lobby.Players)
             {
+                passcount++;
+                Debug.Log($"Passcount {passcount}");
                 var ulongId = LobbyClientIdToNetworkManagerClientId(player.Id);
-                ConvertedIds.Add(ulongId, player.Id);
+                Debug.Log(ulongId);
+                // ConvertedIds.Add(ulongId, player.Id);
             }
         }
         #endregion
@@ -337,12 +345,12 @@ namespace _Scripts
                 return;
             }
             response.Approved = true;
-            
         }
 
         [Rpc(SendTo.Everyone)]
         public void CheckForPlayersRpc()
         {
+            players.Clear();
             foreach (Transform trans in GameObject.Find("PlayerParent").transform)
             {
                 if (trans is null)

@@ -22,6 +22,9 @@ namespace _Scripts
             newName = newName.Remove(newName.IndexOf('#'));
             // first letter to uppercase
             newName = newName[0].ToString().ToUpper() + newName[1..];
+            var playerCount = NetworkManager.Singleton.ConnectedClients.Count;
+            Debug.Log(NetworkManager.Singleton.IsConnectedClient);
+            ulong clientId = NetworkManager.Singleton.ConnectedClientsIds[0]; // gets the newest player (hack fix)
             var newData = new UpdatePlayerOptions
             {
                 Data = new Dictionary<string, PlayerDataObject>
@@ -30,9 +33,14 @@ namespace _Scripts
                         "PlayerName",
                         new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, newName)
                     },
-                    { "UlongId", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, NetworkManager.Singleton.LocalClientId.ToString()) }
+                    {
+                        "UlongId",
+                        new PlayerDataObject(
+                            PlayerDataObject.VisibilityOptions.Public,
+                            clientId.ToString()
+                        )
+                    }
                 }
-                
             };
 
             await LobbyService.Instance.UpdatePlayerAsync(
@@ -93,26 +101,35 @@ namespace _Scripts
 
         public static string NetworkManagerClientIdToLobbyClientId(ulong clientId)
         {
-            return LobbyManager.Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString()).Id;
+            return LobbyManager
+                .Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString())
+                .Id;
         }
 
         public static ulong LobbyClientIdToNetworkManagerClientId(string clientId)
         {
-            var test= LobbyManager.Instance.Lobby.Players.Find(w => w.Id == clientId).Data["UlongId"].Value;
+            var test = LobbyManager
+                .Instance.Lobby.Players.Find(w => w.Id == clientId)
+                .Data["UlongId"]
+                .Value;
+            Debug.LogWarning(test);
             return Convert.ToUInt64(test);
-
-
         }
 
-        public static string NetworkManagerClientIdToPlayerName(ulong clientId)
+        private static string NetworkManagerClientIdToPlayerName(ulong clientId)
         {
-            var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString());
+            var player = LobbyManager.Instance.Lobby.Players.Find(w =>
+                w.Data["UlongId"].Value == clientId.ToString()
+            );
             return player.Data["PlayerName"].Value;
         }
-        public static string GetPlayerNameById(string id)
+
+        public static string GetName(string id)
         {
             var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);
             return player.Data["PlayerName"].Value;
         }
+
+        public static string GetName(ulong id) => NetworkManagerClientIdToPlayerName(id);
     }
 }

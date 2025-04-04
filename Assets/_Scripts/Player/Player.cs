@@ -25,10 +25,18 @@ namespace _Scripts.Player
             LobbyManager.Instance.CheckForPlayersRpc();
             DDolThisRpc();
         }
+
         [Rpc(SendTo.Everyone)]
         private void DDolThisRpc()
         {
             DontDestroyOnLoad(transform.parent.gameObject);
+        }
+
+        public void SpawnInThisPlayer()
+        {
+            if (!IsOwner)
+                return;
+            Debug.Log($"Spawning in player {LobbyUtil.GetName(NetworkObject.OwnerClientId)}");
         }
 
         public void OnLeaving()

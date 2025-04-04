@@ -106,13 +106,16 @@ namespace _Scripts
         {
             try
             {
+                Debug.LogWarning("This ran");
                 NetworkManager
                     .Singleton.GetComponent<UnityTransport>()
                     .SetRelayServerData(serverData);
+                bool test = false;
                 if (isHost)
-                    NetworkManager.Singleton.StartHost();
+                    test = NetworkManager.Singleton.StartHost();
                 else
-                    NetworkManager.Singleton.StartClient();
+                    test = NetworkManager.Singleton.StartClient();
+                Debug.LogWarning(test);
             }
             catch (Exception e)
             {

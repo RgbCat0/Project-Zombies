@@ -16,9 +16,27 @@ namespace _Scripts.Zombies
             _agent.stoppingDistance = 1f;
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             _agent.SetDestination(_player.position);
+        }
+
+        private Transform GetClosestPlayer()
+        {
+            var players = GameObject.FindGameObjectsWithTag("Player");
+            float closestDistance = Mathf.Infinity;
+            Transform closestplayer = null;
+            foreach (var player in players)
+            {
+                float distance = Vector3.Distance(player.transform.position, transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestplayer = player.transform;
+                }
+            }
+
+            return closestplayer;
         }
     }
 }

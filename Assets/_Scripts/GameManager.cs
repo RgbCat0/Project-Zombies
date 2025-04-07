@@ -56,7 +56,7 @@ namespace _Scripts
             _playerAmount = _players.Count;
         }
 
-        [Rpc(SendTo.Server)]
+        [Rpc(SendTo.Everyone)]
         private void SpawnInPlayerObjectsRpc()
         {
             foreach (var player in _players)

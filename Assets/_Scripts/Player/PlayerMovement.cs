@@ -58,17 +58,23 @@ namespace _Scripts.Player
         private LayerMask groundMask;
         private bool _isGrounded;
 
-        private void Awake()
+        [Header("Misc")]
+        [SerializeField]
+        private Transform camHolder;
+
+        private void Start()
         {
+            if (!IsOwner)
+            {
+                enabled = false;
+                return;
+            }
             _inputActions = new PlayerInputs();
             _inputActions.Enable();
             _rigidbody = GetComponent<Rigidbody>();
             _camera = Camera.main;
             Cursor.lockState = CursorLockMode.Locked;
-        }
-
-        private void Start()
-        {
+            CamMover.CamHolder = camHolder;
             _inputActions.Player.Move.performed += ctx => _movementInput = ctx.ReadValue<Vector2>();
             _inputActions.Player.Look.performed += ctx =>
                 _mouseInput = ctx.ReadValue<Vector2>() * sensitivity;
@@ -135,6 +141,7 @@ namespace _Scripts.Player
         {
             Vector3 velocity = _rigidbody.linearVelocity;
             velocity.y = 0;
+
             if (!(velocity.magnitude > maxSpeed))
                 return;
             velocity = velocity.normalized * maxSpeed;

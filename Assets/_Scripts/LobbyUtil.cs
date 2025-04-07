@@ -14,7 +14,7 @@ namespace _Scripts
     {
         public static LobbyUi LobbyUi;
 
-        public static async Task UpdatePlayerDataInLobby()
+        public static async Task UpdatePlayerNameInLobby()
         {
             string newName = AuthenticationService.Instance.PlayerName;
             string id = AuthenticationService.Instance.PlayerId;
@@ -22,9 +22,7 @@ namespace _Scripts
             newName = newName.Remove(newName.IndexOf('#'));
             // first letter to uppercase
             newName = newName[0].ToString().ToUpper() + newName[1..];
-            var playerCount = NetworkManager.Singleton.ConnectedClients.Count;
             Debug.Log(NetworkManager.Singleton.IsConnectedClient);
-            ulong clientId = NetworkManager.Singleton.ConnectedClientsIds[0]; // gets the newest player (hack fix)
             var newData = new UpdatePlayerOptions
             {
                 Data = new Dictionary<string, PlayerDataObject>
@@ -32,13 +30,6 @@ namespace _Scripts
                     {
                         "PlayerName",
                         new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, newName)
-                    },
-                    {
-                        "UlongId",
-                        new PlayerDataObject(
-                            PlayerDataObject.VisibilityOptions.Public,
-                            clientId.ToString()
-                        )
                     }
                 }
             };
@@ -49,6 +40,31 @@ namespace _Scripts
                 newData
             );
             Log($"Updated player Data in lobby of user: {newName}");
+        }
+
+        public static async Task UpdateUlongIdInLobby()
+        {
+            string id = AuthenticationService.Instance.PlayerId;
+            var newData = new UpdatePlayerOptions
+            {
+                Data = new Dictionary<string, PlayerDataObject>
+                {
+                    {
+                        "UlongId",
+                        new PlayerDataObject(
+                            PlayerDataObject.VisibilityOptions.Public,
+                            NetworkManager.Singleton.LocalClientId.ToString()
+                        )
+                    }
+                }
+            };
+
+            await LobbyService.Instance.UpdatePlayerAsync(
+                LobbyManager.Instance.Lobby.Id,
+                id,
+                newData
+            );
+            Log($"Updated ulong ID in lobby of user: {id}");
         }
 
         public static async Task ChangeName(string newName)
@@ -118,10 +134,16 @@ namespace _Scripts
 
         private static string NetworkManagerClientIdToPlayerName(ulong clientId)
         {
-            var player = LobbyManager.Instance.Lobby.Players.Find(w =>
-                w.Data["UlongId"].Value == clientId.ToString()
-            );
-            return player.Data["PlayerName"].Value;
+            // var player = LobbyManager.Instance.Lobby.Players.Find(w =>
+            //     w.Data["UlongId"].Value == clientId.ToString()
+            // );
+            // return player.Data["PlayerName"].Value;
+            var player = LobbyManager.Instance.ConvertedIds[clientId];
+            var playerName = LobbyManager
+                .Instance.Lobby.Players.Find(w => w.Id == player)
+                .Data["PlayerName"]
+                .Value;
+            return playerName;
         }
 
         public static string GetName(string id)

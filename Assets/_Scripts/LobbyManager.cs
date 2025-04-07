@@ -34,6 +34,8 @@ namespace _Scripts
         [SerializeField]
         private List<GameObject> players = new();
 
+        public bool quickTest; // if enabled automatically creates a lobby and starts the game
+
         private LobbyUi _lobbyUi; // caching
         #region Insance
         private void Awake()
@@ -60,6 +62,10 @@ namespace _Scripts
                 NetworkManager.Singleton.ConnectionApprovalCallback += ApproveConnection;
                 await UnityServices.InitializeAsync();
                 await SignIn();
+                if (quickTest)
+                {
+                    CreateLobby("TestLobby");
+                }
             }
             catch (Exception e)
             {
@@ -135,10 +141,12 @@ namespace _Scripts
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
 
                 Status("Updating player Data...");
-                await UpdatePlayerDataInLobby();
+                await UpdatePlayerNameInLobby();
 
                 Log($"Successfully Created lobby {Lobby.Name}");
                 After();
+                if (quickTest)
+                    StartGameRpc();
             }
             catch (Exception e)
             {
@@ -177,7 +185,6 @@ namespace _Scripts
 
                 Status("Joining Unity Networking...");
                 StartNetworking(serverData, false);
-                await AwaitIsListening();
 
                 var callbacks = new LobbyEventCallbacks();
                 callbacks.PlayerLeft += OnPlayerLeft;
@@ -186,7 +193,7 @@ namespace _Scripts
                 await LobbyService.Instance.SubscribeToLobbyEventsAsync(Lobby.Id, callbacks);
 
                 Status("Updating Player Data...");
-                await UpdatePlayerDataInLobby();
+                await UpdatePlayerNameInLobby();
 
                 Log($"Successfully Joined lobby {Lobby.Name}");
                 After();
@@ -195,15 +202,6 @@ namespace _Scripts
             {
                 Log($"Failed to join lobby: {e.Message}", LogType.Error);
             }
-        }
-
-        private Task AwaitIsListening()
-        {
-            while (!NetworkManager.Singleton.IsConnectedClient)
-            {
-                Debug.Log("Waiting for client to connect...");
-            }
-            return Task.CompletedTask;
         }
 
         private void After()
@@ -284,16 +282,45 @@ namespace _Scripts
         #endregion
         #region GameStarted
 
+        [Rpc(SendTo.Server)]
+        public void StartGameRpc()
+        {
+            if (Lobby.Players.Count != ConvertedIds.Count)
+            {
+                Debug.LogError(
+                    $"Not all players are connected. {Lobby.Players.Count} != {ConvertedIds.Count}"
+                );
+                return;
+            }
+            StartGameAllRpc();
+        }
+
         [Rpc(SendTo.Everyone)]
-        public void StartGameRpc() => StartCoroutine(GameStartCountdown());
+        private void StartGameAllRpc()
+        {
+            StartingGameAsync();
+        }
+
+        private async void StartingGameAsync()
+        {
+            try
+            {
+                StartCoroutine(GameStartCountdown());
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
         [Rpc(SendTo.Server)]
         private void StartGamePRpc()
         {
             try
             {
-                if (NetworkManager.Singleton.IsServer)
-                    GameStarted = true;
+                if (GameStarted)
+                    return;
+                GameStarted = true;
                 GameManager.Instance.LoadInPlayers();
                 NetworkManager.SceneManager.LoadScene("Main", LoadSceneMode.Single);
             }
@@ -306,30 +333,19 @@ namespace _Scripts
 
         private IEnumerator GameStartCountdown()
         {
-            MatchIds();
-            Status("Game Starting in 3 seconds...");
-            yield return new WaitForSeconds(1);
-            Status("Game Starting in 2 seconds...");
-            yield return new WaitForSeconds(1);
-            Status("Game Starting in 1 seconds...");
-            yield return new WaitForSeconds(1);
+            // MatchIds();
+            if (!quickTest)
+            {
+                Status("Game Starting in 3 seconds...");
+                yield return new WaitForSeconds(1);
+                Status("Game Starting in 2 seconds...");
+                yield return new WaitForSeconds(1);
+                Status("Game Starting in 1 seconds...");
+                yield return new WaitForSeconds(1);
+            }
             StartGamePRpc();
         }
 
-        private void MatchIds()
-        {
-            ConvertedIds.Clear();
-            Debug.Log(Lobby.Players.Count);
-            var passcount = 0;
-            foreach (var player in Lobby.Players)
-            {
-                passcount++;
-                Debug.Log($"Passcount {passcount}");
-                var ulongId = LobbyClientIdToNetworkManagerClientId(player.Id);
-                Debug.Log(ulongId);
-                // ConvertedIds.Add(ulongId, player.Id);
-            }
-        }
         #endregion
         #region Misc
 

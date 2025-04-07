@@ -5,11 +5,11 @@ namespace _Scripts.Player
 {
     public class CamMover : MonoBehaviour
     {
-        [SerializeField]
-        private Transform camHolder;
+        public static Transform CamHolder;
+
         void LateUpdate()
         {
-        transform.position = camHolder.position;
+            transform.position = CamHolder.position;
         }
     }
 }

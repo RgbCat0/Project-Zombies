@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 60170256}
   m_Layer: 5
-  m_Name: Join Menu
+  m_Name: JoinMenuParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2144,7 +2144,7 @@ GameObject:
   m_Component:
   - component: {fileID: 893134395}
   m_Layer: 5
-  m_Name: Lobby Menu
+  m_Name: LobbyMenuParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2582,7 +2582,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1252498172}
   m_Layer: 5
-  m_Name: Host Menu
+  m_Name: HostMenuParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2644,7 +2644,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   playerPrefab: {fileID: 163510238107069518, guid: a1a10f14f39a9f34b909ae5a90fde66e, type: 3}
   players: []
-  quickTest: 1
+  quickTest: 0
 --- !u!4 &1302731303
 Transform:
   m_ObjectHideFlags: 0
@@ -2725,6 +2725,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  players: []
+  playerMovements: []
 --- !u!1 &1348223005
 GameObject:
   m_ObjectHideFlags: 0
@@ -2949,7 +2951,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1553253677}
   m_Layer: 5
-  m_Name: Main Menu
+  m_Name: MainMenuParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

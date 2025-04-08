@@ -128,7 +128,6 @@ namespace _Scripts.Player
                 else
                     newAccel = acceleration;
             }
-
             _rigidbody.AddForce(moveDirection.normalized * newAccel, ForceMode.Force);
         }
 

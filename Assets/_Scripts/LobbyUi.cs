@@ -7,7 +7,6 @@ using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
-using static _Scripts.LobbyUtil;
 
 namespace _Scripts
 {
@@ -61,7 +60,7 @@ namespace _Scripts
 
         private const int YDownAmount = 100;
         private int _currentYDownAmount;
-        private List<GameObject> _playerList = new List<GameObject>();
+        private List<GameObject> _playerList = new();
         private List<GameObject> _lobbies = new();
 
         [SerializeField]
@@ -81,6 +80,15 @@ namespace _Scripts
             mainJoin.interactable = false;
             SetupInputFields();
             ChangeStatus();
+            mainName.onValueChanged.AddListener(Call);
+        }
+
+        private void Call(string arg0)
+        {
+            //removes all spaces from the name
+            mainName.text = arg0.Replace(" ", "");
+            if (mainName.text.Length > 20)
+                mainName.text = mainName.text[..20];
         }
 
         private IEnumerator WaitForSignIn()

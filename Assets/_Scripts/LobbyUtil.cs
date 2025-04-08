@@ -16,13 +16,8 @@ namespace _Scripts
 
         public static async Task UpdatePlayerNameInLobby()
         {
-            string newName = AuthenticationService.Instance.PlayerName;
+            string newName = FormatName(AuthenticationService.Instance.PlayerName);
             string id = AuthenticationService.Instance.PlayerId;
-            // remove the #4040 from the end of the name
-            newName = newName.Remove(newName.IndexOf('#'));
-            // first letter to uppercase
-            newName = newName[0].ToString().ToUpper() + newName[1..];
-            Debug.Log(NetworkManager.Singleton.IsConnectedClient);
             var newData = new UpdatePlayerOptions
             {
                 Data = new Dictionary<string, PlayerDataObject>
@@ -40,6 +35,14 @@ namespace _Scripts
                 newData
             );
             Log($"Updated player Data in lobby of user: {newName}");
+        }
+
+        private static string FormatName(string name)
+        {
+            // remove the #4040 from the end of the name
+            name = name.Remove(name.IndexOf('#'));
+            // first letter to uppercase
+            return name[0].ToString().ToUpper() + name[1..];
         }
 
         public static async Task UpdateUlongIdInLobby()
@@ -83,7 +86,7 @@ namespace _Scripts
         #region logging
 
         public static void Log(
-            string text,
+            object message,
             LogType logType = LogType.Log,
             [CanBeNull] Exception exception = null
         )
@@ -91,13 +94,15 @@ namespace _Scripts
             switch (logType)
             {
                 case LogType.Log:
-                    Debug.Log(text);
+                    Debug.Log(message);
                     break;
                 case LogType.Warning:
-                    Debug.LogWarning(text);
+                    Debug.LogWarning(message);
                     break;
+                case LogType.Exception:
+                case LogType.Assert:
                 case LogType.Error:
-                    Debug.LogError(text + exception?.Message);
+                    Debug.LogError(message + exception?.StackTrace);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(logType), logType, null);
@@ -115,14 +120,14 @@ namespace _Scripts
         }
         #endregion
 
-        public static string NetworkManagerClientIdToLobbyClientId(ulong clientId)
+        public static string NetworkIdToLobbyId(ulong clientId)
         {
             return LobbyManager
                 .Instance.Lobby.Players.Find(w => w.Data["UlongId"].Value == clientId.ToString())
                 .Id;
         }
 
-        public static ulong LobbyClientIdToNetworkManagerClientId(string clientId)
+        public static ulong LobbyIdToNetworkId(string clientId)
         {
             var test = LobbyManager
                 .Instance.Lobby.Players.Find(w => w.Id == clientId)
@@ -132,12 +137,8 @@ namespace _Scripts
             return Convert.ToUInt64(test);
         }
 
-        private static string NetworkManagerClientIdToPlayerName(ulong clientId)
+        private static string UlongIdToPlayerName(ulong clientId)
         {
-            // var player = LobbyManager.Instance.Lobby.Players.Find(w =>
-            //     w.Data["UlongId"].Value == clientId.ToString()
-            // );
-            // return player.Data["PlayerName"].Value;
             var player = LobbyManager.Instance.ConvertedIds[clientId];
             var playerName = LobbyManager
                 .Instance.Lobby.Players.Find(w => w.Id == player)
@@ -146,12 +147,14 @@ namespace _Scripts
             return playerName;
         }
 
-        public static string GetName(string id)
+        public static string GetName(string id) // DOESNT WORK ON CLIENTS AAAAAAAAA I WANT TO KILL
         {
+            Debug.Log(id);
             var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);
+            Debug.LogWarning(player is null);
             return player.Data["PlayerName"].Value;
         }
 
-        public static string GetName(ulong id) => NetworkManagerClientIdToPlayerName(id);
+        public static string GetName(ulong id) => UlongIdToPlayerName(id);
     }
 }

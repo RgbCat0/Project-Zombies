@@ -298,19 +298,7 @@ namespace _Scripts
         [Rpc(SendTo.Everyone)]
         private void StartGameAllRpc()
         {
-            StartingGameAsync();
-        }
-
-        private async void StartingGameAsync()
-        {
-            try
-            {
-                StartCoroutine(GameStartCountdown());
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
+            StartCoroutine(GameStartCountdown());
         }
 
         [Rpc(SendTo.Server)]
@@ -321,12 +309,12 @@ namespace _Scripts
                 if (GameStarted)
                     return;
                 GameStarted = true;
-                GameManager.Instance.LoadInPlayers();
+                GameManager.Instance.LoadInPlayersRpc();
                 NetworkManager.SceneManager.LoadScene("Main", LoadSceneMode.Single);
             }
             catch (Exception e)
             {
-                Log($"Failed to start game: {e.Message}", LogType.Error);
+                Log($"Failed to start game: {e.Message}", LogType.Error, e);
                 Status("Failed to start game.", Color.red);
             }
         }
@@ -372,6 +360,7 @@ namespace _Scripts
                 if (trans is null)
                     continue;
                 players.Add(trans.gameObject);
+                trans.GetComponent<Player.Player>().UpdatePlayerIdLate();
             }
         }
 

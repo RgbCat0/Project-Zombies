@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
+using _Scripts.Player;
 
 namespace _Scripts
 {
@@ -11,7 +13,9 @@ namespace _Scripts
         public static GameManager Instance;
         private int _playerAmount;
         private int _playersLoaded;
-        private List<Player.Player> _players = new();
+
+        public List<Player.Player> players = new();
+        public List<PlayerMovement> playerMovements = new(); // Player.Player spawns in this player and is another object
 
         private void Awake()
         {
@@ -19,12 +23,13 @@ namespace _Scripts
                 Instance = this;
         }
 
-        public void LoadInPlayers()
+        [Rpc(SendTo.Everyone)]
+        public void LoadInPlayersRpc()
         {
             // should start in the main game scene
+            GetAllPlayers();
             if (IsServer)
             {
-                GetAllPlayers();
                 Debug.Log("Loading in players");
                 NetworkManager.SceneManager.OnLoadComplete += SceneManagerOnOnLoadComplete;
             }
@@ -39,9 +44,9 @@ namespace _Scripts
             if (scenename != "Main")
                 return;
 
-            var playerId = LobbyManager.Instance.ConvertedIds[clientid];
-            var playerName = LobbyUtil.GetName(playerId);
-            Debug.Log($"Player {playerName} joined.");
+            string playerId = LobbyManager.Instance.ConvertedIds[clientid];
+            string playerName = LobbyUtil.GetName(playerId);
+            Debug.Log($"Player {playerName} loaded in.");
             _playersLoaded++;
             if (_playersLoaded == _playerAmount)
                 SpawnInPlayerObjectsRpc();
@@ -49,19 +54,23 @@ namespace _Scripts
 
         private void GetAllPlayers()
         {
+            Debug.Log(NetworkManager.Singleton.ConnectedClients.Count);
             foreach (var player in NetworkManager.Singleton.ConnectedClients)
             {
-                _players.Add(player.Value.PlayerObject.GetComponent<Player.Player>());
+                var currPlayer = player.Value.PlayerObject.GetComponent<Player.Player>();
+                players.Add(currPlayer);
             }
-            _playerAmount = _players.Count;
+            _playerAmount = players.Count;
         }
 
         [Rpc(SendTo.Everyone)]
         private void SpawnInPlayerObjectsRpc()
         {
-            foreach (var player in _players)
+            foreach (var player in players)
             {
                 player.SpawnInThisPlayer();
+                var playerMovement = player.inGamePlayer.GetComponent<PlayerMovement>();
+                playerMovements.Add(playerMovement);
             }
         }
     }

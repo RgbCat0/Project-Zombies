@@ -8,7 +8,11 @@ namespace _Scripts.Player
     {
         [SerializeField]
         private NetworkObject inGamePlayerPrefab;
+
+        [SerializeField]
         private string _lobbyPlayerId;
+
+        public NetworkObject inGamePlayer;
 
         private void Start()
         {
@@ -16,7 +20,7 @@ namespace _Scripts.Player
             {
                 return;
             }
-            _lobbyPlayerId = AuthenticationService.Instance.PlayerId;
+            UpdatePlayerIdLate();
             ParentThisRpc();
             SendUlongIdToServerRpc(_lobbyPlayerId);
             // NetworkManager.SceneManager.OnLoadComplete += GameManager.Instance.SceneManagerOnOnLoadComplete;
@@ -37,24 +41,39 @@ namespace _Scripts.Player
         }
 
         [Rpc(SendTo.Everyone)]
-        private void SendUlongIdToServerRpc(string playerId)
+        private void SendUlongIdToServerRpc(string id)
         {
-            _lobbyPlayerId = playerId;
+            _lobbyPlayerId = id;
             ulong ulongId = NetworkObject.OwnerClientId;
-            Debug.Log($"Player {playerId} joined.");
-            LobbyManager.Instance.ConvertedIds.Add(ulongId, playerId);
+            Debug.Log($"Player {_lobbyPlayerId} joined.");
+            LobbyManager.Instance.ConvertedIds.Add(ulongId, _lobbyPlayerId);
         }
 
         public void SpawnInThisPlayer()
         {
-            var test = NetworkManager.Singleton.SpawnManager.InstantiateAndSpawn(
+            inGamePlayer = NetworkManager.Singleton.SpawnManager.InstantiateAndSpawn(
                 inGamePlayerPrefab,
                 NetworkObject.OwnerClientId,
                 isPlayerObject: true
             );
             var playerName = LobbyUtil.GetName(_lobbyPlayerId);
             NetworkObject.name = $"Player {playerName}";
+            inGamePlayer.name = $"InGamePlayer {playerName}";
             Debug.Log($"Spawning in player {playerName}");
+        }
+
+        public void UpdatePlayerIdLate()
+        {
+            if (!IsOwner)
+                return;
+            _lobbyPlayerId = AuthenticationService.Instance.PlayerId;
+            UpdaterRpc(_lobbyPlayerId);
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void UpdaterRpc(string id)
+        {
+            _lobbyPlayerId = id;
         }
 
         public void OnLeaving()

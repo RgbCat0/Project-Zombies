@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -7,36 +9,43 @@ namespace _Scripts.Zombies
     public class ZombieMovement : MonoBehaviour // targets closest player from 4 players
     {
         private NavMeshAgent _agent;
-        private Transform _player; //single player testing before multiplayer
+
+        [SerializeField]
+        private List<Transform> _players = new();
 
         private void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
-            _player = GameObject.FindWithTag("Player").transform;
-            _agent.stoppingDistance = 1f;
+            _agent.stoppingDistance = 1.5f;
+        }
+
+        private void Start()
+        {
+            foreach (var player in GameManager.Instance.playerMovements)
+            {
+                _players.Add(player.transform);
+            }
         }
 
         private void FixedUpdate()
         {
-            _agent.SetDestination(_player.position);
+            _agent.SetDestination(GetClosestPlayer());
         }
 
-        private Transform GetClosestPlayer()
+        private Vector3 GetClosestPlayer()
         {
-            var players = GameObject.FindGameObjectsWithTag("Player");
             float closestDistance = Mathf.Infinity;
-            Transform closestplayer = null;
-            foreach (var player in players)
+            Vector3 closestPlayer = Vector3.positiveInfinity;
+            foreach (Transform player in _players)
             {
                 float distance = Vector3.Distance(player.transform.position, transform.position);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestplayer = player.transform;
-                }
-            }
+                if (distance >= closestDistance)
+                    continue;
 
-            return closestplayer;
+                closestDistance = distance;
+                closestPlayer = player.position;
+            }
+            return closestPlayer;
         }
     }
 }

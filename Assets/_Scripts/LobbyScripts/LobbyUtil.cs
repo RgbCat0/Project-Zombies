@@ -8,7 +8,7 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
-namespace _Scripts
+namespace _Scripts.LobbyScripts
 {
     public static class LobbyUtil // helper class for lobby
     {
@@ -25,8 +25,8 @@ namespace _Scripts
                     {
                         "PlayerName",
                         new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, newName)
-                    }
-                }
+                    },
+                },
             };
 
             await LobbyService.Instance.UpdatePlayerAsync(
@@ -58,8 +58,8 @@ namespace _Scripts
                             PlayerDataObject.VisibilityOptions.Public,
                             NetworkManager.Singleton.LocalClientId.ToString()
                         )
-                    }
-                }
+                    },
+                },
             };
 
             await LobbyService.Instance.UpdatePlayerAsync(
@@ -147,7 +147,7 @@ namespace _Scripts
             return playerName;
         }
 
-        public static string GetName(string id) // DOESNT WORK ON CLIENTS AAAAAAAAA I WANT TO KILL
+        public static string GetName(string id)
         {
             Debug.Log(id);
             var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);

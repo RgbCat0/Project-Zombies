@@ -11,10 +11,10 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static _Scripts.LobbyNetworking;
-using static _Scripts.LobbyUtil;
+using static _Scripts.LobbyScripts.LobbyNetworking;
+using static _Scripts.LobbyScripts.LobbyUtil;
 
-namespace _Scripts
+namespace _Scripts.LobbyScripts
 {
     public class LobbyManager : NetworkBehaviour
     {

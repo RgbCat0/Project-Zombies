@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
@@ -6,7 +7,7 @@ using UnityEngine.AI;
 namespace _Scripts.Zombies
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public class ZombieMovement : MonoBehaviour // targets closest player from 4 players
+    public class ZombieMovement : NetworkBehaviour // targets closest player from 4 players
     {
         private NavMeshAgent _agent;
 
@@ -15,6 +16,12 @@ namespace _Scripts.Zombies
 
         private void Awake()
         {
+            if (!IsOwner)
+            {
+                enabled = false;
+                return;
+            }
+
             _agent = GetComponent<NavMeshAgent>();
             _agent.stoppingDistance = 1.5f;
         }

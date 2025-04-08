@@ -8,7 +8,7 @@ using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace _Scripts
+namespace _Scripts.LobbyScripts
 {
     public class LobbyUi : MonoBehaviour // add status to the in game UI (for when clicking on create lobby etc.)
     {

@@ -9,9 +9,9 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
-using static _Scripts.LobbyUtil;
+using static _Scripts.LobbyScripts.LobbyUtil;
 
-namespace _Scripts
+namespace _Scripts.LobbyScripts
 {
     public static class LobbyNetworking
     {
@@ -55,8 +55,8 @@ namespace _Scripts
                         {
                             "relayJoinCode",
                             new DataObject(DataObject.VisibilityOptions.Public, relayJoinCode)
-                        }
-                    }
+                        },
+                    },
                 };
                 return await LobbyService.Instance.CreateLobbyAsync(lobbyName, 4, options);
             }

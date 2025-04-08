@@ -1,10 +1,9 @@
-using System;
 using System.Collections.Generic;
+using _Scripts.LobbyScripts;
+using _Scripts.Player;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
-using _Scripts.Player;
 
 namespace _Scripts
 {

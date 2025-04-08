@@ -8,7 +8,7 @@ namespace _Scripts.Player
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerMovement : NetworkBehaviour // fps movement (handles only movement)
     {
-        private PlayerInputs _inputActions;
+
         private Rigidbody _rigidbody;
         private Vector2 _movementInput;
         private Vector2 _mouseInput;
@@ -64,24 +64,25 @@ namespace _Scripts.Player
 
         private void Start()
         {
+            
             if (!IsOwner)
             {
                 enabled = false;
                 return;
             }
-            _inputActions = new PlayerInputs();
-            _inputActions.Enable();
+
+            var inputActions = InputManager.Instance.InputActions;
             _rigidbody = GetComponent<Rigidbody>();
             _camera = Camera.main;
             Cursor.lockState = CursorLockMode.Locked;
             CamMover.CamHolder = camHolder;
-            _inputActions.Player.Move.performed += ctx => _movementInput = ctx.ReadValue<Vector2>();
-            _inputActions.Player.Look.performed += ctx =>
+            inputActions.Player.Move.performed += ctx => _movementInput = ctx.ReadValue<Vector2>();
+            inputActions.Player.Look.performed += ctx =>
                 _mouseInput = ctx.ReadValue<Vector2>() * sensitivity;
-            _inputActions.Player.Move.canceled += _ => _movementInput = Vector2.zero;
-            _inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
-            _inputActions.Player.Jump.performed += _ => _isJumping = true;
-            _inputActions.Player.Jump.canceled += _ => _isJumping = false;
+            inputActions.Player.Move.canceled += _ => _movementInput = Vector2.zero;
+            inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
+            inputActions.Player.Jump.performed += _ => _isJumping = true;
+            inputActions.Player.Jump.canceled += _ => _isJumping = false;
         }
 
         private void Update()

@@ -121,6 +121,7 @@ GameObject:
   - component: {fileID: 4102814259346416994}
   - component: {fileID: 1248321535524696861}
   - component: {fileID: 2476365423209880359}
+  - component: {fileID: 6826024684996343364}
   - component: {fileID: 7982163627697513177}
   - component: {fileID: 7164376079287808124}
   - component: {fileID: 4028321418546214451}
@@ -238,7 +239,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  speed: 3.2
   _players: []
+--- !u!114 &6826024684996343364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630506001280277016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b80b9df8e847dcab0d8b7730af6d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 10
+  damageInterval: 1
 --- !u!33 &7982163627697513177
 MeshFilter:
   m_ObjectHideFlags: 0

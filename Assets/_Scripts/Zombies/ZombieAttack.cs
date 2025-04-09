@@ -26,7 +26,7 @@ namespace _Scripts.Zombies
         {
             if (other.CompareTag("Player"))
             {
-                _damageTimer = 0f; // Reset timer when out of contact
+                _damageTimer = 0f;
             }
         }
     }

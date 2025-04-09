@@ -30,7 +30,8 @@ namespace _Scripts
                 return;
             }
             _shootPoint = Camera.main!.transform;
-
+            _currentMagAmmo = weaponData.magazineSize;
+            _currentTotalAmmo = weaponData.maxAmmo;
             _setup = true;
         }
 
@@ -40,6 +41,7 @@ namespace _Scripts
                 return;
             _isShooting = false;
             _isReloading = false;
+            UpdateUi();
         }
 
         private void OnDisable()
@@ -62,13 +64,12 @@ namespace _Scripts
             {
                 return;
             }
-
             if (!weaponData.isAutomatic && !_hasShot)
             {
                 _hasShot = true;
                 Shoot();
             }
-            else if (weaponData.isAutomatic)
+            if (weaponData.isAutomatic)
             {
                 Shoot();
             }
@@ -78,6 +79,7 @@ namespace _Scripts
         {
             if (_currentMagAmmo <= 0)
                 return;
+            Debug.Log("is shooting");
             _currentMagAmmo--;
             int playerLayer = LayerMask.NameToLayer("Player");
             int ignorePlayerMask = ~(1 << playerLayer);
@@ -91,6 +93,8 @@ namespace _Scripts
                     zombie.TakeDamageRpc(weaponData.damage);
                 }
             }
+
+            UpdateUi();
             StartCoroutine(CoolDown());
         }
 
@@ -112,8 +116,21 @@ namespace _Scripts
                 yield return new WaitForSeconds(weaponData.reloadTimeEmpty);
             else
                 yield return new WaitForSeconds(weaponData.reloadTime);
-
+            int ammoToReload = weaponData.magazineSize - _currentMagAmmo;
+            if (_currentTotalAmmo < ammoToReload)
+                ammoToReload = _currentTotalAmmo;
+            _currentMagAmmo += ammoToReload;
+            _currentTotalAmmo -= ammoToReload;
+            UpdateUi();
             _isReloading = false;
+        }
+
+        private void UpdateUi() =>
+            UIManager.Instance.UpdateAmmo(_currentMagAmmo, _currentTotalAmmo);
+
+        private void PlayVisuals()
+        {
+            // shooting visuals (recoil muzzle flash etc.)
         }
     }
 }

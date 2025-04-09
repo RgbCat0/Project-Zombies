@@ -1,14 +1,13 @@
 ﻿using System.Collections;
+using UnityEngine;
 using _Scripts.Player;
 using _Scripts.Zombies;
-using UnityEngine;
 
 namespace _Scripts
 {
     public class Weapon : MonoBehaviour
     {
-        [SerializeField]
-        private WeaponData weaponData;
+        public WeaponData weaponData;
 
         private bool _setup;
         private bool _isShooting;
@@ -16,8 +15,8 @@ namespace _Scripts
         private bool _onCooldown;
         private int _currentMagAmmo;
         private int _currentTotalAmmo;
-        private LayerMask _zombieMask;
         private Transform _shootPoint;
+        private bool _hasShot;
 
         private void Start()
         {
@@ -30,7 +29,6 @@ namespace _Scripts
                 Debug.LogError("WeaponData is not assigned in the inspector.");
                 return;
             }
-            _zombieMask = LayerMask.NameToLayer("Zombie");
             _shootPoint = Camera.main!.transform;
 
             _setup = true;
@@ -58,7 +56,19 @@ namespace _Scripts
             {
                 StartCoroutine(Reload());
             }
-            if (_isShooting && !_isReloading && !_onCooldown)
+            if (!_isShooting)
+                _hasShot = false;
+            if (!_isShooting || _isReloading || _onCooldown)
+            {
+                return;
+            }
+
+            if (!weaponData.isAutomatic && !_hasShot)
+            {
+                _hasShot = true;
+                Shoot();
+            }
+            else if (weaponData.isAutomatic)
             {
                 Shoot();
             }
@@ -69,21 +79,16 @@ namespace _Scripts
             if (_currentMagAmmo <= 0)
                 return;
             _currentMagAmmo--;
+            int playerLayer = LayerMask.NameToLayer("Player");
+            int ignorePlayerMask = ~(1 << playerLayer);
+            var ray = new Ray(_shootPoint.position, _shootPoint.forward);
 
-            if (
-                Physics.Raycast(
-                    _shootPoint.position,
-                    _shootPoint.forward,
-                    out var hit,
-                    120f,
-                    _zombieMask
-                )
-            )
+            if (Physics.Raycast(ray, out var hit, 120f, ignorePlayerMask))
             {
                 var zombie = hit.collider.GetComponent<Zombie>();
                 if (zombie)
                 {
-                    zombie.TakeDamageRpc(weaponData.Damage);
+                    zombie.TakeDamageRpc(weaponData.damage);
                 }
             }
             StartCoroutine(CoolDown());
@@ -91,6 +96,8 @@ namespace _Scripts
 
         private IEnumerator CoolDown()
         {
+            if (_onCooldown)
+                yield break;
             _onCooldown = true;
             yield return new WaitForSeconds(weaponData.FireRate);
             _onCooldown = false;
@@ -98,10 +105,15 @@ namespace _Scripts
 
         private IEnumerator Reload()
         {
-            if (_isReloading)
+            if (_isReloading || _currentTotalAmmo <= 0)
                 yield break;
             _isReloading = true;
-            yield return new WaitForSeconds(weaponData.ReloadTime);
+            if (_currentMagAmmo <= 0)
+                yield return new WaitForSeconds(weaponData.reloadTimeEmpty);
+            else
+                yield return new WaitForSeconds(weaponData.reloadTime);
+
+            _isReloading = false;
         }
     }
 }

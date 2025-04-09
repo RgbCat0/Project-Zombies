@@ -12,22 +12,20 @@ namespace _Scripts.Zombies
         private NavMeshAgent _agent;
 
         [SerializeField]
+        private float speed = 3.2f;
+
+        [SerializeField]
         private List<Transform> _players = new();
 
-        private void Awake()
+        private void Start()
         {
             if (!IsOwner)
             {
                 enabled = false;
                 return;
             }
-
             _agent = GetComponent<NavMeshAgent>();
             _agent.stoppingDistance = 1.5f;
-        }
-
-        private void Start()
-        {
             foreach (var player in GameManager.Instance.playerMovements)
             {
                 _players.Add(player.transform);
@@ -37,6 +35,7 @@ namespace _Scripts.Zombies
         private void FixedUpdate()
         {
             _agent.SetDestination(GetClosestPlayer());
+            _agent.speed = speed;
         }
 
         private Vector3 GetClosestPlayer()

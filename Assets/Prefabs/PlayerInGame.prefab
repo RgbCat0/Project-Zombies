@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 9135581249218214708}
   - component: {fileID: -841315785961710084}
   - component: {fileID: 5258726983695667478}
+  - component: {fileID: 4693653569066458925}
   - component: {fileID: 6292350548411297273}
   - component: {fileID: 6209545537171259062}
   m_Layer: 0
@@ -206,6 +207,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   camHolder: {fileID: 7284016595338056264}
+--- !u!114 &4693653569066458925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6694364069708146280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 425d7eb0983947a0a276b0f3017e633a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxHealth: 100
 --- !u!54 &6292350548411297273
 Rigidbody:
   m_ObjectHideFlags: 0

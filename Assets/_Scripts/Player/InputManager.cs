@@ -6,7 +6,7 @@ namespace _Scripts.Player
     {
         public static InputManager Instance { get; private set; }
         public PlayerInputs InputActions;
-        
+
         private void Awake()
         {
             if (Instance == null)
@@ -18,10 +18,6 @@ namespace _Scripts.Player
             {
                 Destroy(gameObject);
             }
-        }
-
-        private void Start()
-        {
             InputActions = new PlayerInputs();
             InputActions.Player.Enable();
         }

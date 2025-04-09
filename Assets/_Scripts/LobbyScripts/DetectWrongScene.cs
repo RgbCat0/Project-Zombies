@@ -5,8 +5,7 @@ namespace _Scripts.LobbyScripts
 {
     public class DetectWrongScene : MonoBehaviour
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        private void Awake()
         {
             if (LobbyManager.Instance is null)
                 SceneManager.LoadScene("Lobby");

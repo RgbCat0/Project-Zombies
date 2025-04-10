@@ -8,7 +8,6 @@ namespace _Scripts.Player
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerMovement : NetworkBehaviour // fps movement (handles only movement)
     {
-
         private Rigidbody _rigidbody;
         private Vector2 _movementInput;
         private Vector2 _mouseInput;
@@ -64,7 +63,6 @@ namespace _Scripts.Player
 
         private void Start()
         {
-            
             if (!IsOwner)
             {
                 enabled = false;
@@ -83,6 +81,7 @@ namespace _Scripts.Player
             inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
             inputActions.Player.Jump.performed += _ => _isJumping = true;
             inputActions.Player.Jump.canceled += _ => _isJumping = false;
+            transform.position = GameObject.Find("PlayerSpawnPos").transform.position;
         }
 
         private void Update()

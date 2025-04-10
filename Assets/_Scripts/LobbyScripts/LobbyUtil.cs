@@ -149,7 +149,6 @@ namespace _Scripts.LobbyScripts
 
         public static string GetName(string id)
         {
-            Debug.Log(id);
             var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);
             Debug.LogWarning(player is null);
             return player.Data["PlayerName"].Value;

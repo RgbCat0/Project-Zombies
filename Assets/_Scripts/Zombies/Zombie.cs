@@ -29,6 +29,7 @@ namespace _Scripts.Zombies
             // handle death
             // play animation
             // destroy object
+            NetworkObject.Despawn();
         }
 
         [Rpc(SendTo.Everyone)]

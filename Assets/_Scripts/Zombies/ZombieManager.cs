@@ -14,6 +14,12 @@ namespace _Scripts.Zombies
         [SerializeField]
         private NetworkObject zombiePrefab;
 
+        [SerializeField]
+        private List<Transform> zombieSpawnPoints;
+
+        [SerializeField]
+        private Transform zombieParent;
+
         private void Awake()
         {
             if (Instance == null)
@@ -32,25 +38,29 @@ namespace _Scripts.Zombies
             // Initialize the zombie manager
             if (!IsOwnedByServer)
                 enabled = false;
-            SpawnZombie(); // testing
+            for (int i = 0; i < 20; i++)
+            {
+                SpawnZombie(); // testingx
+            }
         }
 
-        public void SpawnZombie(Vector3 position = default)
+        public void SpawnZombie(Transform spawnPoint = null)
         {
-            // Spawn a zombie at the given position
-            if (position == default)
+            if (spawnPoint is null)
             {
-                position = new Vector3(Random.Range(-10, 10), 0, Random.Range(-10, 10));
+                var randomIndex = Random.Range(0, zombieSpawnPoints.Count);
+                spawnPoint = zombieSpawnPoints[randomIndex];
             }
 
             var zombie = NetworkManager.SpawnManager.InstantiateAndSpawn(
                 zombiePrefab,
-                position: position
+                position: spawnPoint.position
             );
+            zombie.transform.parent = zombieParent.transform;
             var zombieComponent = zombie.GetComponent<Zombie>();
             if (zombieComponent != null)
             {
-                zombieComponent.transform.position = position;
+                zombieComponent.transform.position = spawnPoint.position;
                 zombies.Add(zombieComponent);
             }
             else

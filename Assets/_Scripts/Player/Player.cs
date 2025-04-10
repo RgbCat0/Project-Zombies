@@ -1,7 +1,8 @@
-using _Scripts.LobbyScripts;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
+using UnityEngine.UIElements;
+using _Scripts.LobbyScripts;
 
 namespace _Scripts.Player
 {
@@ -60,7 +61,7 @@ namespace _Scripts.Player
             var playerName = LobbyUtil.GetName(_lobbyPlayerId);
             NetworkObject.name = $"Player {playerName}";
             inGamePlayer.name = $"InGamePlayer {playerName}";
-            Debug.Log($"Spawning in player {playerName}");
+            // Debug.Log($"Spawning in player {playerName}");
         }
 
         public void UpdatePlayerIdLate()

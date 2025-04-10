@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using _Scripts.Player;
 using _Scripts.Zombies;
@@ -81,21 +82,41 @@ namespace _Scripts
                 return;
             Debug.Log("is shooting");
             _currentMagAmmo--;
-            int playerLayer = LayerMask.NameToLayer("Player");
-            int ignorePlayerMask = ~(1 << playerLayer);
-            var ray = new Ray(_shootPoint.position, _shootPoint.forward);
-
-            if (Physics.Raycast(ray, out var hit, 120f, ignorePlayerMask))
-            {
-                var zombie = hit.collider.GetComponent<Zombie>();
-                if (zombie)
-                {
-                    zombie.TakeDamageRpc(weaponData.damage);
-                }
-            }
+            CalculateHits();
 
             UpdateUi();
             StartCoroutine(CoolDown());
+        }
+
+        private void CalculateHits()
+        {
+            var ray = new Ray(_shootPoint.position, _shootPoint.forward);
+            RaycastHit[] hits = Physics.RaycastAll(ray, 120f);
+
+            // Sort by distance, just in case
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (var hit in hits)
+            {
+                // If we hit a wall or anything that's supposed to block bullets
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Environment"))
+                {
+                    Debug.Log("Hit wall before zombie. Shot blocked.");
+                    break; // stop checking, bullet is blocked
+                }
+
+                // If we hit a zombie hitbox
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("ZombieHit"))
+                {
+                    var zombie = hit.collider.transform.parent.GetComponent<Zombie>();
+                    if (zombie)
+                    {
+                        zombie.TakeDamageRpc(weaponData.damage);
+                        Debug.Log($"Hit zombie: {zombie.name}");
+                        break; // stop after first valid hit
+                    }
+                }
+            }
         }
 
         private IEnumerator CoolDown()

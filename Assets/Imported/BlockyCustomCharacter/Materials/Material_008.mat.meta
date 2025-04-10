@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c5b332f7983c9ce4c89c4917247eb2ee
+timeCreated: 1501568604
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 96974
+  packageName: Untitled
+  packageVersion: 1.0
+  assetPath: Assets/BlockyCustomCharacter/Materials/Material_008.mat
+  uploadId: 193333

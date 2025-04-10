@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 283a69c9a564ba044a4798bee031e9f7
+timeCreated: 1501566571
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 96974
+  packageName: Untitled
+  packageVersion: 1.0
+  assetPath: Assets/BlockyCustomCharacter/Materials/World/Bark.mat
+  uploadId: 193333

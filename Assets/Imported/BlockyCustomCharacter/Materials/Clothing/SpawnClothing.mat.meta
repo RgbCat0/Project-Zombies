@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 86fbeb3634a1d4440b95258351d9c312
+timeCreated: 1501567813
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 96974
+  packageName: Untitled
+  packageVersion: 1.0
+  assetPath: Assets/BlockyCustomCharacter/Materials/Clothing/SpawnClothing.mat
+  uploadId: 193333

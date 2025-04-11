@@ -36,8 +36,12 @@ namespace _Scripts.Zombies
         private void Start()
         {
             // Initialize the zombie manager
-            if (!IsOwnedByServer)
+            if (!NetworkManager.Singleton.IsServer)
+            {
                 enabled = false;
+                return;
+            }
+            ;
             for (int i = 0; i < 20; i++)
             {
                 SpawnZombie(); // testingx

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using _Scripts.LobbyScripts;
 using _Scripts.Player;
+using _Scripts.Zombies;
 
 namespace _Scripts
 {
@@ -18,6 +19,8 @@ namespace _Scripts
 
         [SerializeField]
         private Transform playerSpawnPoint;
+
+        private GameObject _inGameManager;
 
         private void Awake()
         {
@@ -45,6 +48,13 @@ namespace _Scripts
         {
             if (scenename != "Main")
                 return;
+            if (clientid == OwnerClientId)
+            {
+                // _inGameManager = GameObject.FindWithTag("InGameManager");
+                // _inGameManager
+                //     .GetComponent<ZombieManager>()
+                //     .NetworkObject.ChangeOwnership(OwnerClientId);
+            }
 
             string playerId = LobbyManager.Instance.ConvertedIds[clientid];
             // string playerName = LobbyUtil.GetName(playerId);
@@ -65,7 +75,7 @@ namespace _Scripts
             _playerAmount = players.Count;
         }
 
-        [Rpc(SendTo.Everyone)]
+        // [Rpc(SendTo.Everyone)]
         private void SpawnInPlayerObjectsRpc()
         {
             foreach (var player in players)
@@ -74,6 +84,7 @@ namespace _Scripts
                 var playerMovement = player.inGamePlayer.GetComponent<PlayerMovement>();
                 playerMovements.Add(playerMovement);
             }
+            ZombieMovement.players = playerMovements.ConvertAll(player => player.transform);
         }
     }
 }

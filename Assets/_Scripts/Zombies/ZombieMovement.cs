@@ -14,8 +14,7 @@ namespace _Scripts.Zombies
         [SerializeField]
         private float speed = 3.2f;
 
-        [SerializeField]
-        private List<Transform> _players = new();
+        public static List<Transform> players = new();
 
         private void Start()
         {
@@ -26,10 +25,6 @@ namespace _Scripts.Zombies
             }
             _agent = GetComponent<NavMeshAgent>();
             _agent.stoppingDistance = 1.5f;
-            foreach (var player in GameManager.Instance.playerMovements)
-            {
-                _players.Add(player.transform);
-            }
         }
 
         private void FixedUpdate()
@@ -42,7 +37,7 @@ namespace _Scripts.Zombies
         {
             float closestDistance = Mathf.Infinity;
             Vector3 closestPlayer = Vector3.positiveInfinity;
-            foreach (Transform player in _players)
+            foreach (Transform player in players)
             {
                 float distance = Vector3.Distance(player.transform.position, transform.position);
                 if (distance >= closestDistance)

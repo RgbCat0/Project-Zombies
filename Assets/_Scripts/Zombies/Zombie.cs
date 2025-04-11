@@ -9,13 +9,12 @@ namespace _Scripts.Zombies
         [SerializeField]
         private NetworkVariable<int> health = new(100);
 
-        private void Start() // server should be owner of this object.
-        { }
+        [SerializeField]
+        private int pointAmount = 10;
 
         [Rpc(SendTo.Server)]
         public void TakeDamageRpc(int damage)
         {
-            Debug.Log($"Zombie took {damage} damage.");
             health.Value -= damage;
             if (health.Value <= 0)
                 DieRpc();
@@ -24,11 +23,11 @@ namespace _Scripts.Zombies
         [Rpc(SendTo.Server)]
         private void DieRpc()
         {
-            Debug.Log("Zombie died.");
             DieAllRpc();
             // handle death
             // play animation
             // destroy object
+            PointManager.Instance.AddPoints(pointAmount);
             NetworkObject.Despawn();
         }
 

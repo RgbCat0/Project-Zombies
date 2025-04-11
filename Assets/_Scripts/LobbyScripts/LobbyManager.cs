@@ -34,8 +34,9 @@ namespace _Scripts.LobbyScripts
         [SerializeField]
         private List<GameObject> players = new();
 
+#if UNITY_EDITOR
         public bool quickTest; // if enabled automatically creates a lobby and starts the game
-
+#endif
         private LobbyUi _lobbyUi; // caching
         #region Insance
         private void Awake()
@@ -62,10 +63,12 @@ namespace _Scripts.LobbyScripts
                 NetworkManager.Singleton.ConnectionApprovalCallback += ApproveConnection;
                 await UnityServices.InitializeAsync();
                 await SignIn();
+#if UNITY_EDITOR
                 if (quickTest)
                 {
                     CreateLobby("TestLobby");
                 }
+#endif
             }
             catch (Exception e)
             {
@@ -144,9 +147,12 @@ namespace _Scripts.LobbyScripts
                 await UpdatePlayerNameInLobby();
 
                 Log($"Successfully Created lobby {Lobby.Name}");
+                StartHeartbeat();
                 After();
+#if UNITY_EDITOR
                 if (quickTest)
                     StartGameRpc();
+#endif
             }
             catch (Exception e)
             {
@@ -322,15 +328,20 @@ namespace _Scripts.LobbyScripts
         private IEnumerator GameStartCountdown()
         {
             // MatchIds();
-            if (!quickTest)
+#if UNITY_EDITOR
+            if (quickTest)
             {
-                Status("Game Starting in 3 seconds...");
-                yield return new WaitForSeconds(1);
-                Status("Game Starting in 2 seconds...");
-                yield return new WaitForSeconds(1);
-                Status("Game Starting in 1 seconds...");
-                yield return new WaitForSeconds(1);
+                StartGamePRpc();
+                yield break;
             }
+#endif
+            Status("Game Starting in 3 seconds...");
+            yield return new WaitForSeconds(1);
+            Status("Game Starting in 2 seconds...");
+            yield return new WaitForSeconds(1);
+            Status("Game Starting in 1 seconds...");
+            yield return new WaitForSeconds(1);
+
             StartGamePRpc();
         }
 
@@ -373,6 +384,25 @@ namespace _Scripts.LobbyScripts
             NetworkManager.Shutdown();
         }
 
+        public void StartHeartbeat()
+        {
+            StartCoroutine(SendHeartbeatCoroutine());
+        }
+
+        private IEnumerator SendHeartbeatCoroutine()
+        {
+            while (Lobby != null && !GameStarted)
+            {
+                Task heartbeatTask = LobbyService.Instance.SendHeartbeatPingAsync(Lobby.Id);
+                yield return new WaitUntil(() => heartbeatTask.IsCompleted);
+                Debug.Log("Heartbeat sent to lobby.");
+                if (heartbeatTask.IsFaulted)
+                {
+                    Debug.LogError("Failed to send heartbeat: " + heartbeatTask.Exception);
+                }
+                yield return new WaitForSeconds(15f);
+            }
+        }
         #endregion
     }
 }

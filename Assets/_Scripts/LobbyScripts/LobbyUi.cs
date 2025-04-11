@@ -197,11 +197,12 @@ namespace _Scripts.LobbyScripts
                         Destroy(obj);
                     }
                 }
+                _currentYDownAmount = 0;
                 lobbies.Results.ForEach(lobby =>
                 {
-                    Debug.Log($"Lobby: {lobby.Name} - {lobby.Id}");
                     GameObject real = CreateLobbyUi(lobby);
                     _lobbies.Add(real);
+                    _currentYDownAmount -= YDownAmount;
                 });
             }
             catch (Exception e)
@@ -224,6 +225,11 @@ namespace _Scripts.LobbyScripts
                 GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
                 newLobby.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                     $"{lobby.Name}\n{lobby.Players[0].Data["PlayerName"].Value}"; // should be lobby name
+                newLobby.GetComponent<RectTransform>().anchoredPosition = new Vector3(
+                    0,
+                    _currentYDownAmount,
+                    0
+                );
                 newLobby
                     .transform.GetChild(0)
                     .GetChild(1)

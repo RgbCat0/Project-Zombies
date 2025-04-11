@@ -8,11 +8,14 @@ namespace _Scripts.Player
         [SerializeField]
         private float maxHealth = 100f;
 
-        public NetworkVariable<float> CurrentHealth { get; } = new(100f);
+        public NetworkVariable<float> CurrentHealth { get; } =
+            new(100f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         private void Start()
         {
-            CurrentHealth.Value = maxHealth;
+            if (IsOwner)
+                CurrentHealth.Value = maxHealth;
+            CurrentHealth.OnValueChanged += OnHealthChanged;
         }
 
         public void TakeDamage(float damage)
@@ -30,6 +33,11 @@ namespace _Scripts.Player
         {
             Debug.Log("Player has died.");
             // CurrentHealth = maxHealth;
+        }
+
+        private void OnHealthChanged(float previousValue, float newValue)
+        {
+            UIManager.Instance.UpdateHealth((int)newValue);
         }
     }
 }

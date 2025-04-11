@@ -61,6 +61,9 @@ namespace _Scripts.Player
         [SerializeField]
         private Transform camHolder;
 
+        [SerializeField]
+        private Transform spawnPos;
+
         private void Start()
         {
             if (!IsOwner)
@@ -81,7 +84,8 @@ namespace _Scripts.Player
             inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
             inputActions.Player.Jump.performed += _ => _isJumping = true;
             inputActions.Player.Jump.canceled += _ => _isJumping = false;
-            transform.position = GameObject.Find("PlayerSpawnPos").transform.position;
+            spawnPos = GameObject.FindWithTag("SpawnPos").transform;
+            NetworkObject.transform.position = spawnPos.position;
         }
 
         private void Update()

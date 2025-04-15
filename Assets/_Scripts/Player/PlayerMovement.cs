@@ -11,8 +11,9 @@ namespace _Scripts.Player
         private Rigidbody _rigidbody;
         private Vector2 _movementInput;
         private Vector2 _mouseInput;
-        private Camera _camera;
+        private Transform _camera;
         private Vector2 _cameraRotation;
+        private Door _lookAtDoor;
 
         [Header("Mouse")]
         [SerializeField]
@@ -74,7 +75,7 @@ namespace _Scripts.Player
 
             var inputActions = InputManager.Instance.InputActions;
             _rigidbody = GetComponent<Rigidbody>();
-            _camera = Camera.main;
+            _camera = Camera.main!.transform;
             Cursor.lockState = CursorLockMode.Locked;
             CamMover.CamHolder = camHolder;
             inputActions.Player.Move.performed += ctx => _movementInput = ctx.ReadValue<Vector2>();
@@ -84,8 +85,16 @@ namespace _Scripts.Player
             inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
             inputActions.Player.Jump.performed += _ => _isJumping = true;
             inputActions.Player.Jump.canceled += _ => _isJumping = false;
+            inputActions.Player.Interact.performed += _ => CheckBuy();
+            // GetComponent<NetworkTransform>().enabled = false;
             spawnPos = GameObject.FindWithTag("SpawnPos").transform;
-            NetworkObject.transform.position = spawnPos.position;
+            StartCoroutine(LateSpawnPos());
+        }
+
+        private IEnumerator LateSpawnPos() // idk why this fixes it
+        {
+            yield return new WaitForEndOfFrame();
+            transform.position = spawnPos.position;
         }
 
         private void Update()
@@ -98,6 +107,7 @@ namespace _Scripts.Player
 
         private void FixedUpdate()
         {
+            CheckIfLookingAtDoor();
             HandleMovement();
             Jump();
             if (_isGrounded && !_jumpCoroutine && !_canJump)
@@ -110,11 +120,7 @@ namespace _Scripts.Player
             float newCamY = _cameraRotation.y + _mouseInput.y; // rotates the camera up and down
             newCamY = Mathf.Clamp(newCamY, -maxLookAngle, maxLookAngle);
             _cameraRotation = new Vector2(newCamX, newCamY);
-            _camera.transform.localRotation = Quaternion.Euler(
-                -_cameraRotation.y,
-                _cameraRotation.x,
-                0
-            );
+            _camera.localRotation = Quaternion.Euler(-_cameraRotation.y, _cameraRotation.x, 0);
             _rigidbody.MoveRotation(Quaternion.Euler(0, _cameraRotation.x, 0));
         }
 
@@ -170,6 +176,33 @@ namespace _Scripts.Player
             yield return new WaitForSeconds(jumpCooldown);
             _canJump = true;
             _jumpCoroutine = false;
+        }
+
+        private void CheckIfLookingAtDoor()
+        {
+            if (!Physics.Raycast(_camera.position, _camera.forward, out RaycastHit hit))
+            {
+                if (_lookAtDoor != null)
+                    _lookAtDoor.transform.GetChild(0).gameObject.SetActive(false);
+                _lookAtDoor = null;
+                return;
+            }
+            if (hit.collider.CompareTag("Door"))
+            {
+                if (_lookAtDoor == null)
+                    _lookAtDoor = hit.collider.transform.parent.GetComponent<Door>();
+                _lookAtDoor.priceText.gameObject.SetActive(true);
+            }
+        }
+
+        private void CheckBuy() // shoots a raycast to check if the player is looking at a buyable object
+        {
+            if (_lookAtDoor == null)
+                return;
+            if (_lookAtDoor.doorPrice > PointManager.Instance.GetPoints())
+                return;
+            _lookAtDoor.OpenDoorRpc();
+            PointManager.Instance.RemovePoints(_lookAtDoor.doorPrice);
         }
     }
 }

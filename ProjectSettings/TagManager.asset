@@ -6,6 +6,8 @@ TagManager:
   tags:
   - SpawnPos
   - InGameManager
+  - Buyable
+  - Door
   layers:
   - Default
   - TransparentFX

@@ -59,7 +59,7 @@ namespace _Scripts.LobbyScripts
         private GameObject newPlayerPrefab;
 
         private const int YDownAmount = 100;
-        private int _currentYDownAmount;
+        private int _yDown;
         private List<GameObject> _playerList = new();
         private List<GameObject> _lobbies = new();
 
@@ -197,12 +197,15 @@ namespace _Scripts.LobbyScripts
                         Destroy(obj);
                     }
                 }
-                _currentYDownAmount = 0;
+                _yDown = 0;
                 lobbies.Results.ForEach(lobby =>
                 {
                     GameObject real = CreateLobbyUi(lobby);
-                    _lobbies.Add(real);
-                    _currentYDownAmount -= YDownAmount;
+                    if (real != null)
+                    {
+                        _lobbies.Add(real);
+                        _yDown -= YDownAmount;
+                    }
                 });
             }
             catch (Exception e)
@@ -220,16 +223,14 @@ namespace _Scripts.LobbyScripts
         /// <exception cref="Exception">Thrown when the UI fails to create a lobby.</exception>
         private GameObject CreateLobbyUi(Lobby lobby) // Spawns a new Prefab for each lobby
         {
+            if (lobby.Name is null) // checks if the lobby has fully loaded
+                return null;
+            GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
             try
             {
-                GameObject newLobby = Instantiate(newLobbyPrefab, joinMenu.transform);
+                newLobby.GetComponent<RectTransform>().anchoredPosition = new Vector3(0, _yDown, 0);
                 newLobby.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                     $"{lobby.Name}\n{lobby.Players[0].Data["PlayerName"].Value}"; // should be lobby name
-                newLobby.GetComponent<RectTransform>().anchoredPosition = new Vector3(
-                    0,
-                    _currentYDownAmount,
-                    0
-                );
                 newLobby
                     .transform.GetChild(0)
                     .GetChild(1)
@@ -243,7 +244,7 @@ namespace _Scripts.LobbyScripts
                 Debug.LogError($"Failed to create a UI for a lobby: {lobby.Name}");
                 Debug.LogException(e);
             }
-            return null;
+            return newLobby; // always return a lobby so it can get added to the list.
         }
 
         private void JoinLobby(Lobby lobby)
@@ -252,7 +253,16 @@ namespace _Scripts.LobbyScripts
             LobbyManager.Instance.JoinLobby(lobby.Id);
         }
 
-        public void CreateGame() => LobbyManager.Instance.CreateLobby(hostLobbyName.text);
+        public void CreateGame()
+        {
+            if (string.IsNullOrEmpty(hostLobbyName.text))
+            {
+                ChangeStatus("Please enter a lobby name.", Color.red);
+                return;
+            }
+            hostMenu.transform.GetChild(1).GetComponent<Button>().interactable = false;
+            LobbyManager.Instance.CreateLobby(hostLobbyName.text);
+        }
 
         public void OnNewPlayer()
         {
@@ -262,18 +272,18 @@ namespace _Scripts.LobbyScripts
                 Destroy(obj);
             }
 
-            _currentYDownAmount = 0;
+            _yDown = 0;
             foreach (Unity.Services.Lobbies.Models.Player player in playerList)
             {
                 GameObject newPlayer = Instantiate(newPlayerPrefab, lobbyMenu.transform);
                 newPlayer.GetComponent<RectTransform>().anchoredPosition = new Vector3(
                     0,
-                    _currentYDownAmount,
+                    _yDown,
                     0
                 );
                 newPlayer.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                     player.Data["PlayerName"].Value;
-                _currentYDownAmount -= YDownAmount;
+                _yDown -= YDownAmount;
                 _playerList.Add(newPlayer);
             }
         }
@@ -293,6 +303,20 @@ namespace _Scripts.LobbyScripts
                 color = Color.white;
             statusText.text = status;
             statusText.color = color;
+        }
+
+        public void GoToMainMenu()
+        {
+            ChangeView(mainMenu);
+            mainName.text = "";
+            hostLobbyName.text = "";
+            mainHost.interactable = false;
+            mainJoin.interactable = false;
+            foreach (GameObject obj in _lobbies)
+            {
+                Destroy(obj);
+            }
+            _lobbies.Clear();
         }
     }
 }

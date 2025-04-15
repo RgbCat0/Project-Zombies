@@ -229,6 +229,8 @@ namespace _Scripts.LobbyScripts
                 NetworkManager.Singleton.Shutdown();
                 RemovePlayerRpc(_playerId);
                 Log("Left lobby.");
+                Lobby = null;
+                _lobbyUi.GoToMainMenu();
             }
             catch (Exception e)
             {
@@ -266,6 +268,7 @@ namespace _Scripts.LobbyScripts
                 await LobbyService.Instance.DeleteLobbyAsync(Lobby.Id);
                 Status("Lobby Closed.", Color.yellow);
                 Lobby = null;
+                _lobbyUi.GoToMainMenu();
             }
             catch (Exception e)
             {

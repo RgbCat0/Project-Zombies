@@ -1,3 +1,4 @@
+using TMPro;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
@@ -61,7 +62,15 @@ namespace _Scripts.Player
             var playerName = LobbyUtil.GetName(_lobbyPlayerId);
             NetworkObject.name = $"Player {playerName}";
             inGamePlayer.name = $"InGamePlayer {playerName}";
+            UpdateNameRpc(playerName);
             // Debug.Log($"Spawning in player {playerName}");
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void UpdateNameRpc(string playerName)
+        {
+            inGamePlayer.transform.GetChild(3).GetChild(0).GetComponent<TextMeshProUGUI>().text =
+                playerName;
         }
 
         public void UpdatePlayerIdLate()

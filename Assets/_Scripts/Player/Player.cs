@@ -2,6 +2,7 @@ using TMPro;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using _Scripts.LobbyScripts;
 
@@ -85,6 +86,17 @@ namespace _Scripts.Player
         private void UpdaterRpc(string id)
         {
             _lobbyPlayerId = id;
+        }
+
+        public override void OnDestroy()
+        {
+            if (!IsOwner)
+                return;
+            SceneManager.MoveGameObjectToScene(
+                transform.parent.gameObject,
+                SceneManager.GetActiveScene()
+            );
+            base.OnDestroy();
         }
 
         public void OnLeaving()

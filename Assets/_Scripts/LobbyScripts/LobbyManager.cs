@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Unity.Netcode;
 using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
@@ -206,7 +207,7 @@ namespace _Scripts.LobbyScripts
             }
             catch (Exception e)
             {
-                Log($"Failed to join lobby: {e.Message}", LogType.Error);
+                Log($"Failed to join lobby: {e.Message} StackTrace: {e.StackTrace}", LogType.Error);
             }
         }
 
@@ -249,7 +250,6 @@ namespace _Scripts.LobbyScripts
             try
             {
                 await LobbyService.Instance.RemovePlayerAsync(Lobby.Id, playerId);
-                Lobby = null;
                 Status("Left Lobby.", Color.yellow);
             }
             catch (Exception e)
@@ -284,8 +284,9 @@ namespace _Scripts.LobbyScripts
         private void OnPlayerLeft(List<int> wot)
         {
             Log("Player leaving Not implemented yet.", LogType.Warning);
+
             // output list of int to json in debug log
-            // Debug.Log(JsonUtility.ToJson(wot)); // (because I have no idea what it gives.)
+            Debug.Log(JsonConvert.SerializeObject(wot)); // (because I have no idea what it gives.)
         }
 
         #endregion

@@ -81,6 +81,7 @@ namespace _Scripts.LobbyScripts
             SetupInputFields();
             ChangeStatus();
             mainName.onValueChanged.AddListener(Call);
+            hostLobbyName.onValueChanged.AddListener(Call2);
         }
 
         private void Call(string arg0)
@@ -89,6 +90,13 @@ namespace _Scripts.LobbyScripts
             mainName.text = arg0.Replace(" ", "");
             if (mainName.text.Length > 20)
                 mainName.text = mainName.text[..20];
+        }
+
+        private void Call2(string arg0)
+        {
+            hostLobbyName.text = arg0.Replace(" ", "");
+            if (hostLobbyName.text.Length > 20)
+                hostLobbyName.text = hostLobbyName.text[..20];
         }
 
         private IEnumerator WaitForSignIn()
@@ -197,7 +205,7 @@ namespace _Scripts.LobbyScripts
                         Destroy(obj);
                     }
                 }
-                _yDown = 0;
+                _yDown = 150;
                 lobbies.Results.ForEach(lobby =>
                 {
                     GameObject real = CreateLobbyUi(lobby);
@@ -266,7 +274,9 @@ namespace _Scripts.LobbyScripts
 
         public void OnNewPlayer()
         {
+            ChangeStatus("Adding players...");
             var playerList = LobbyManager.Instance.Lobby.Players;
+            Debug.Log(playerList.Count);
             foreach (GameObject obj in _playerList)
             {
                 Destroy(obj);
@@ -281,6 +291,7 @@ namespace _Scripts.LobbyScripts
                     _yDown,
                     0
                 );
+                Debug.Log($"Adding player: {player.Data["PlayerName"].Value}");
                 newPlayer.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                     player.Data["PlayerName"].Value;
                 _yDown -= YDownAmount;

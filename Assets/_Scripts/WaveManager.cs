@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using _Scripts.Zombies;
@@ -19,6 +20,9 @@ namespace _Scripts
         [SerializeField]
         private int extraEnemiesPerWave = 2;
 
+        [SerializeField]
+        private float spawnDelay = 0.9f;
+
         private void Awake()
         {
             if (Instance == null)
@@ -33,17 +37,18 @@ namespace _Scripts
                 return;
             _currentWave = 1;
             _currentEnemyCount = 0;
-            SpawnEnemies();
+            StartCoroutine(SpawnEnemies());
         }
 
-        private void SpawnEnemies()
+        private IEnumerator SpawnEnemies()
         {
+            UpdateUIRpc(_currentWave, _currentWaveEnemyCount);
             for (int i = 0; i < _currentWaveEnemyCount; i++)
             {
                 ZombieManager.Instance.SpawnZombie(healthMultiplier);
+                yield return new WaitForSeconds(spawnDelay);
                 _currentEnemyCount++;
             }
-            UpdateUIRpc(_currentWave, _currentEnemyCount);
         }
 
         [Rpc(SendTo.Everyone)]

@@ -117,6 +117,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   health:
     m_InternalValue: 100
+  pointAmount: 10
 --- !u!114 &2476365423209880359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -131,7 +132,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   speed: 3.2
-  _players: []
 --- !u!33 &7982163627697513177
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -181,7 +181,7 @@ NavMeshAgent:
   m_Height: 2
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 0
 --- !u!1 &1853878006833157317
 GameObject:
   m_ObjectHideFlags: 0
@@ -299,7 +299,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2

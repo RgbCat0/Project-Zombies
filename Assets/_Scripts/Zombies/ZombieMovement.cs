@@ -48,6 +48,13 @@ namespace _Scripts.Zombies
                 closestDistance = distance;
                 closestPlayer = player.position;
             }
+            if (closestPlayer == Vector3.positiveInfinity)
+            {
+                // No players found
+                Debug.Log("No players found");
+                return transform.position;
+            }
+
             return closestPlayer;
         }
     }

@@ -93,9 +93,17 @@ namespace _Scripts.Player
 
         private IEnumerator LateSpawnPos() // idk why this fixes it
         {
+            _rigidbody.linearVelocity = Vector3.zero;
             _rigidbody.isKinematic = true;
             yield return new WaitForSeconds(0.5f);
-            transform.position = spawnPos.position;
+            // randomize spawn pos by 1 unit
+            var newSpawnPos = new Vector3(
+                Random.Range(spawnPos.position.x - 1f, spawnPos.position.x + 1f),
+                spawnPos.position.y,
+                Random.Range(spawnPos.position.z - 1f, spawnPos.position.z + 1f)
+            );
+            _rigidbody.Move(newSpawnPos, transform.rotation);
+
             yield return new WaitForSeconds(0.1f);
             _rigidbody.isKinematic = false;
         }
@@ -106,6 +114,8 @@ namespace _Scripts.Player
             _isGrounded = CheckGrounded();
             ApplyGroundDrag();
             HandleHorizontalSpeed();
+            if (transform.position.y < -50)
+                StartCoroutine(LateSpawnPos());
         }
 
         private void FixedUpdate()
@@ -183,18 +193,25 @@ namespace _Scripts.Player
 
         private void CheckIfLookingAtDoor()
         {
-            if (!Physics.Raycast(_camera.position, _camera.forward, out RaycastHit hit))
+            if (Physics.Raycast(_camera.position, _camera.forward, out RaycastHit hit))
+            {
+                if (hit.collider.CompareTag("Door"))
+                {
+                    if (_lookAtDoor == null)
+                        _lookAtDoor = hit.collider.transform.parent.GetComponent<Door>();
+                    _lookAtDoor.priceText.gameObject.SetActive(true);
+                    _lookAtDoor.priceText.text = $"{_lookAtDoor.doorPrice}";
+                    _lookAtDoor.priceText.color =
+                        PointManager.Instance.GetPoints() > _lookAtDoor.doorPrice
+                            ? Color.white
+                            : Color.red;
+                }
+            }
+            else
             {
                 if (_lookAtDoor != null)
-                    _lookAtDoor.transform.GetChild(0).gameObject.SetActive(false);
+                    _lookAtDoor.priceText.gameObject.SetActive(false);
                 _lookAtDoor = null;
-                return;
-            }
-            if (hit.collider.CompareTag("Door"))
-            {
-                if (_lookAtDoor == null)
-                    _lookAtDoor = hit.collider.transform.parent.GetComponent<Door>();
-                _lookAtDoor.priceText.gameObject.SetActive(true);
             }
         }
 

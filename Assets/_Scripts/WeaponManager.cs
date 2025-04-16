@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using _Scripts.Player;
 
 namespace _Scripts
 {
-    public class WeaponManager : MonoBehaviour
+    public class WeaponManager : NetworkBehaviour
     {
         [SerializeField]
         private List<GameObject> weapons = new();
@@ -20,6 +21,11 @@ namespace _Scripts
 
         private void Start()
         {
+            if (!IsOwner)
+            {
+                enabled = false;
+                return;
+            }
             Setup();
             EquipWeapon(currentWeaponIndex);
         }

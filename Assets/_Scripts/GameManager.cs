@@ -76,13 +76,21 @@ namespace _Scripts
             _playerAmount = players.Count;
         }
 
-        // [Rpc(SendTo.Everyone)]
+        [Rpc(SendTo.Server)]
         private void SpawnInPlayerObjectsRpc()
+        {
+            foreach (var player in players)
+                player.SpawnInThisPlayer();
+
+            AddPlayerMovementsRpc();
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void AddPlayerMovementsRpc()
         {
             playerSpawnPoint = GameObject.FindWithTag("SpawnPos").transform;
             foreach (var player in players)
             {
-                player.SpawnInThisPlayer();
                 var playerMovement = player.inGamePlayer.GetComponent<PlayerMovement>();
                 playerMovements.Add(playerMovement);
             }

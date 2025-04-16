@@ -1,3 +1,4 @@
+using System.Linq;
 using TMPro;
 using Unity.Netcode;
 using Unity.Services.Authentication;
@@ -60,8 +61,17 @@ namespace _Scripts.Player
                 NetworkObject.OwnerClientId,
                 isPlayerObject: true
             );
+            TestRpc(OwnerClientId);
             UpdateNameRpc();
             // Debug.Log($"Spawning in player {playerName}");
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void TestRpc(ulong id)
+        {
+            inGamePlayer = FindObjectsByType<PlayerMovement>(FindObjectsSortMode.None)
+                .FirstOrDefault(w => w.OwnerClientId == id)
+                ?.GetComponent<NetworkObject>();
         }
 
         [Rpc(SendTo.Everyone)]

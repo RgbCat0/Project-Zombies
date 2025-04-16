@@ -45,7 +45,7 @@ namespace _Scripts.Zombies
         {
             int randomIndex = Random.Range(0, zombieSpawnPoints.Count);
             Transform spawnPoint = zombieSpawnPoints[randomIndex];
-
+            Debug.Log(spawnPoint.name);*                    *************
             NetworkObject zombie = NetworkManager.SpawnManager.InstantiateAndSpawn(
                 zombiePrefab,
                 position: spawnPoint.position

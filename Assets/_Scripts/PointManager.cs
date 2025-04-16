@@ -12,7 +12,6 @@ namespace _Scripts
             if (Instance == null)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject);
             }
             else
             {

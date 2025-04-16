@@ -31,13 +31,25 @@ namespace _Scripts.Player
 
         private void Die()
         {
+            if (!IsOwner)
+                return;
             Debug.Log("Player has died.");
-            // CurrentHealth = maxHealth;
+            GameManager.Instance.PlayerDiedRpc(OwnerClientId);
+            // set the camera to follow another player
+        }
+
+        public void Respawn()
+        {
+            if (!IsOwner)
+                return;
+
+            CurrentHealth.Value = maxHealth;
         }
 
         private void OnHealthChanged(float previousValue, float newValue)
         {
-            UIManager.Instance.UpdateHealth((int)newValue);
+            if (IsOwner)
+                UIManager.Instance.UpdateHealth((int)newValue);
         }
     }
 }

@@ -39,6 +39,8 @@ namespace _Scripts.Zombies
             Vector3 closestPlayer = Vector3.positiveInfinity;
             foreach (Transform player in players)
             {
+                if (!player.gameObject.activeInHierarchy)
+                    continue;
                 float distance = Vector3.Distance(player.transform.position, transform.position);
                 if (distance >= closestDistance)
                     continue;

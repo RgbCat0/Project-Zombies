@@ -16,6 +16,7 @@ namespace _Scripts
 
         public List<Player.Player> players = new();
         public List<PlayerMovement> playerMovements = new(); // Player.Player spawns in this player and is another object
+        public List<PlayerMovement> diedPlayers = new();
 
         [SerializeField]
         private Transform playerSpawnPoint;
@@ -78,6 +79,7 @@ namespace _Scripts
         // [Rpc(SendTo.Everyone)]
         private void SpawnInPlayerObjectsRpc()
         {
+            playerSpawnPoint = GameObject.FindWithTag("SpawnPos").transform;
             foreach (var player in players)
             {
                 player.SpawnInThisPlayer();
@@ -85,6 +87,30 @@ namespace _Scripts
                 playerMovements.Add(playerMovement);
             }
             ZombieMovement.players = playerMovements.ConvertAll(player => player.transform);
+        }
+
+        [Rpc(SendTo.Everyone)]
+        public void PlayerDiedRpc(ulong player)
+        {
+            // match ulong to playerMovement
+            var playerMovement = playerMovements.Find(w => w.OwnerClientId == player);
+            if (diedPlayers.Contains(playerMovement))
+                return;
+            diedPlayers.Add(playerMovement);
+            playerMovement.gameObject.SetActive(false);
+            // Debug.Log($"{player.name} died.");
+        }
+
+        [Rpc(SendTo.Server)]
+        public void RespawnPlayersRpc()
+        {
+            foreach (var player in diedPlayers)
+            {
+                player.transform.position = playerSpawnPoint.position;
+                player.gameObject.SetActive(true);
+                player.GetComponent<PlayerHealth>().Respawn();
+            }
+            diedPlayers.Clear();
         }
     }
 }

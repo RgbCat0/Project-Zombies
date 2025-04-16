@@ -60,16 +60,16 @@ namespace _Scripts.Player
                 NetworkObject.OwnerClientId,
                 isPlayerObject: true
             );
-            var playerName = LobbyUtil.GetName(_lobbyPlayerId);
-            NetworkObject.name = $"Player {playerName}";
-            inGamePlayer.name = $"InGamePlayer {playerName}";
-            UpdateNameRpc(playerName);
+            UpdateNameRpc();
             // Debug.Log($"Spawning in player {playerName}");
         }
 
         [Rpc(SendTo.Everyone)]
-        private void UpdateNameRpc(string playerName)
+        private void UpdateNameRpc()
         {
+            var playerName = LobbyUtil.GetName(_lobbyPlayerId);
+            NetworkObject.name = $"Player {playerName}";
+            inGamePlayer.name = $"InGamePlayer {playerName}";
             inGamePlayer.transform.GetChild(3).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                 playerName;
         }

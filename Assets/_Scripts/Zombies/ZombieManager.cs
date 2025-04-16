@@ -25,7 +25,6 @@ namespace _Scripts.Zombies
             if (Instance == null)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject);
             }
             else
             {
@@ -39,24 +38,15 @@ namespace _Scripts.Zombies
             if (!NetworkManager.Singleton.IsServer)
             {
                 enabled = false;
-                return;
-            }
-            ;
-            for (int i = 0; i < 20; i++)
-            {
-                SpawnZombie(); // testingx
             }
         }
 
-        public void SpawnZombie(Transform spawnPoint = null)
+        public void SpawnZombie(float healthMulti)
         {
-            if (spawnPoint is null)
-            {
-                var randomIndex = Random.Range(0, zombieSpawnPoints.Count);
-                spawnPoint = zombieSpawnPoints[randomIndex];
-            }
+            int randomIndex = Random.Range(0, zombieSpawnPoints.Count);
+            Transform spawnPoint = zombieSpawnPoints[randomIndex];
 
-            var zombie = NetworkManager.SpawnManager.InstantiateAndSpawn(
+            NetworkObject zombie = NetworkManager.SpawnManager.InstantiateAndSpawn(
                 zombiePrefab,
                 position: spawnPoint.position
             );
@@ -64,6 +54,7 @@ namespace _Scripts.Zombies
             var zombieComponent = zombie.GetComponent<Zombie>();
             if (zombieComponent != null)
             {
+                zombieComponent.Setup(healthMulti);
                 zombieComponent.transform.position = spawnPoint.position;
                 zombies.Add(zombieComponent);
             }

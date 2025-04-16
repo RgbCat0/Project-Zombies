@@ -93,8 +93,11 @@ namespace _Scripts.Player
 
         private IEnumerator LateSpawnPos() // idk why this fixes it
         {
-            yield return new WaitForEndOfFrame();
+            _rigidbody.isKinematic = true;
+            yield return new WaitForSeconds(0.5f);
             transform.position = spawnPos.position;
+            yield return new WaitForSeconds(0.1f);
+            _rigidbody.isKinematic = false;
         }
 
         private void Update()

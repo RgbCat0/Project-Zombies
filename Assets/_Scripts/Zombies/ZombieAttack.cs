@@ -1,5 +1,5 @@
-using UnityEngine;
 using _Scripts.Player;
+using UnityEngine;
 
 namespace _Scripts.Zombies
 {
@@ -8,6 +8,14 @@ namespace _Scripts.Zombies
         public float damage = 10f;
         public float damageInterval = 1f; // seconds between damage
         private float _damageTimer;
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!other.CompareTag("Player"))
+                return;
+            _damageTimer = 0f;
+            other.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+        }
 
         private void OnTriggerStay(Collider other)
         {

@@ -1,11 +1,11 @@
 using System.Linq;
+using _Scripts.LobbyScripts;
 using TMPro;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using _Scripts.LobbyScripts;
 
 namespace _Scripts.Player
 {
@@ -50,7 +50,6 @@ namespace _Scripts.Player
         {
             _lobbyPlayerId = id;
             ulong ulongId = NetworkObject.OwnerClientId;
-            Debug.Log($"Player {_lobbyPlayerId} joined.");
             LobbyManager.Instance.ConvertedIds.Add(ulongId, _lobbyPlayerId);
         }
 

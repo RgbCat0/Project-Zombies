@@ -1684,7 +1684,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 119
+    m_Bits: 1015
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -5733,9 +5733,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  healthMultiplier: 1
+  waves:
+  - startWave: 0
+    zombies:
+    - info: {fileID: 11400000, guid: 2dac6a1d4d6f2714e8348b98bf52206c, type: 2}
+      spawnChance: 1
+    - info: {fileID: 11400000, guid: 435904224ad0c0d409c5672703e20cd6, type: 2}
+      spawnChance: 1
+  - startWave: 2
+    zombies:
+    - info: {fileID: 11400000, guid: 2dac6a1d4d6f2714e8348b98bf52206c, type: 2}
+      spawnChance: 1
+    - info: {fileID: 11400000, guid: 435904224ad0c0d409c5672703e20cd6, type: 2}
+      spawnChance: 1
+  zombies:
+  - {fileID: 11400000, guid: 2dac6a1d4d6f2714e8348b98bf52206c, type: 2}
+  - {fileID: 11400000, guid: 435904224ad0c0d409c5672703e20cd6, type: 2}
   extraEnemiesPerWave: 2
   spawnDelay: 0.9
+  healthMulti: 0
 --- !u!1 &1129079378
 GameObject:
   m_ObjectHideFlags: 0
@@ -8960,7 +8976,7 @@ Transform:
   m_GameObject: {fileID: 1671075068}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -15.44}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

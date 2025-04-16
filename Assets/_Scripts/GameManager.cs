@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Unity.Netcode;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using _Scripts.LobbyScripts;
 using _Scripts.Player;
 using _Scripts.Zombies;
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace _Scripts
 {
@@ -107,16 +107,25 @@ namespace _Scripts
             diedPlayers.Add(playerMovement);
             playerMovement.gameObject.SetActive(false);
             // Debug.Log($"{player.name} died.");
+            if (diedPlayers.Count == playerMovements.Count)
+            {
+                WaveManager.Instance.DespawnEnemies(); // only despawn if all players are dead
+                WaveManager.Instance.StartNextWave();
+            }
         }
 
-        [Rpc(SendTo.Server)]
+        [Rpc(SendTo.Everyone)]
         public void RespawnPlayersRpc()
         {
             foreach (var player in diedPlayers)
             {
                 player.transform.position = playerSpawnPoint.position;
                 player.gameObject.SetActive(true);
-                player.GetComponent<PlayerHealth>().Respawn();
+                if (player.OwnerClientId == OwnerClientId)
+                {
+                    player.GetComponent<PlayerHealth>().Respawn();
+                    player.GetComponent<WeaponManager>().ResetAmmo();
+                }
             }
             diedPlayers.Clear();
         }

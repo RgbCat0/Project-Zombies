@@ -11,8 +11,7 @@ namespace _Scripts.Zombies
     {
         private NavMeshAgent _agent;
 
-        [SerializeField]
-        private float speed = 3.2f;
+        public float speed = 3.2f;
 
         public static List<Transform> players = new();
 

@@ -92,7 +92,6 @@ namespace _Scripts.LobbyScripts
                 IsSignedIn = false;
                 Log($"Sign in failed: {e.Message}", LogType.Error);
             }
-            Log($"Signed in as {AuthenticationService.Instance.PlayerName}");
         }
         #endregion
         #region Joining
@@ -147,7 +146,6 @@ namespace _Scripts.LobbyScripts
                 Status("Updating player Data...");
                 await UpdatePlayerNameInLobby();
 
-                Log($"Successfully Created lobby {Lobby.Name}");
                 StartHeartbeat();
                 After();
 #if UNITY_EDITOR
@@ -229,7 +227,6 @@ namespace _Scripts.LobbyScripts
                 Status("Leaving Lobby...");
                 NetworkManager.Singleton.Shutdown();
                 RemovePlayerRpc(_playerId);
-                Log("Left lobby.");
                 Lobby = null;
                 _lobbyUi.GoToMainMenu();
             }
@@ -381,7 +378,6 @@ namespace _Scripts.LobbyScripts
 
         private void OnApplicationQuit()
         {
-            Log("Application quitting...");
             if (!IsServer)
                 return;
             LobbyService.Instance.DeleteLobbyAsync(Lobby.Id);
@@ -399,7 +395,6 @@ namespace _Scripts.LobbyScripts
             {
                 Task heartbeatTask = LobbyService.Instance.SendHeartbeatPingAsync(Lobby.Id);
                 yield return new WaitUntil(() => heartbeatTask.IsCompleted);
-                Debug.Log("Heartbeat sent to lobby.");
                 if (heartbeatTask.IsFaulted)
                 {
                     Debug.LogError("Failed to send heartbeat: " + heartbeatTask.Exception);

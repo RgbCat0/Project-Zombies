@@ -276,7 +276,7 @@ namespace _Scripts.LobbyScripts
         {
             ChangeStatus("Adding players...");
             var playerList = LobbyManager.Instance.Lobby.Players;
-            Debug.Log(playerList.Count);
+            // Debug.Log(playerList.Count);
             foreach (GameObject obj in _playerList)
             {
                 Destroy(obj);
@@ -291,7 +291,7 @@ namespace _Scripts.LobbyScripts
                     _yDown,
                     0
                 );
-                Debug.Log($"Adding player: {player.Data["PlayerName"].Value}");
+                // Debug.Log($"Adding player: {player.Data["PlayerName"].Value}");
                 newPlayer.transform.GetChild(0).GetChild(0).GetComponent<TextMeshProUGUI>().text =
                     player.Data["PlayerName"].Value;
                 _yDown -= YDownAmount;

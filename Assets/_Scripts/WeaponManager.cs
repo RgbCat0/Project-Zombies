@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using _Scripts.Player;
 using Unity.Netcode;
 using UnityEngine;
-using _Scripts.Player;
 
 namespace _Scripts
 {
@@ -23,10 +23,15 @@ namespace _Scripts
         {
             if (!IsOwner)
             {
-                enabled = false;
-                return;
+                foreach (var obj in weapons)
+                {
+                    obj.GetComponent<Weapon>().enabled = false;
+                }
             }
-            Setup();
+            else
+            {
+                Setup();
+            }
             EquipWeapon(currentWeaponIndex);
         }
 
@@ -45,7 +50,20 @@ namespace _Scripts
                 Debug.LogError("Invalid weapon index");
                 return;
             }
+            ShowWeaponAllRpc(index);
+        }
 
+        public void ResetAmmo()
+        {
+            foreach (var obj in weapons)
+            {
+                obj.GetComponent<Weapon>().ResetAmmo();
+            }
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ShowWeaponAllRpc(int index)
+        {
             foreach (GameObject obj in weapons)
                 obj?.SetActive(false);
 

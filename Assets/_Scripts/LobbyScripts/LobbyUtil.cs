@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Unity.Netcode;
@@ -88,21 +89,28 @@ namespace _Scripts.LobbyScripts
         public static void Log(
             object message,
             LogType logType = LogType.Log,
-            [CanBeNull] Exception exception = null
+            Exception exception = null,
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0,
+            [CallerMemberName] string memberName = ""
         )
         {
+            string contextInfo =
+                $"{System.IO.Path.GetFileName(filePath)}:{lineNumber} ({memberName})";
+            string finalMessage = $"{message} \n<color=grey>[{contextInfo}]</color>";
+
             switch (logType)
             {
                 case LogType.Log:
-                    Debug.Log(message);
+                    Debug.Log(finalMessage);
                     break;
                 case LogType.Warning:
-                    Debug.LogWarning(message);
+                    Debug.LogWarning(finalMessage);
                     break;
                 case LogType.Exception:
                 case LogType.Assert:
                 case LogType.Error:
-                    Debug.LogError(message + exception?.StackTrace);
+                    Debug.LogError(finalMessage + (exception != null ? $"\n{exception}" : ""));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(logType), logType, null);
@@ -150,7 +158,6 @@ namespace _Scripts.LobbyScripts
         public static string GetName(string id)
         {
             var player = LobbyManager.Instance.Lobby.Players.Find(w => w.Id == id);
-            Debug.LogWarning(player is null);
             return player.Data["PlayerName"].Value;
         }
 

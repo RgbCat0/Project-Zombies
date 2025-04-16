@@ -94,18 +94,13 @@ namespace _Scripts.Player
         private IEnumerator LateSpawnPos() // idk why this fixes it
         {
             _rigidbody.linearVelocity = Vector3.zero;
-            _rigidbody.isKinematic = true;
-            yield return new WaitForSeconds(0.5f);
-            // randomize spawn pos by 1 unit
             var newSpawnPos = new Vector3(
                 Random.Range(spawnPos.position.x - 1f, spawnPos.position.x + 1f),
                 spawnPos.position.y,
                 Random.Range(spawnPos.position.z - 1f, spawnPos.position.z + 1f)
             );
             _rigidbody.Move(newSpawnPos, transform.rotation);
-
-            yield return new WaitForSeconds(0.1f);
-            _rigidbody.isKinematic = false;
+            yield break;
         }
 
         private void Update()
@@ -134,7 +129,8 @@ namespace _Scripts.Player
             newCamY = Mathf.Clamp(newCamY, -maxLookAngle, maxLookAngle);
             _cameraRotation = new Vector2(newCamX, newCamY);
             _camera.localRotation = Quaternion.Euler(-_cameraRotation.y, _cameraRotation.x, 0);
-            _rigidbody.MoveRotation(Quaternion.Euler(0, _cameraRotation.x, 0));
+            transform.rotation = Quaternion.Euler(0, _cameraRotation.x, 0);
+            // _rigidbody.MoveRotation(Quaternion.Euler(0, _cameraRotation.x, 0));
         }
 
         private void HandleMovement()

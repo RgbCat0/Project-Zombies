@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
-using UnityEngine;
 using _Scripts.Player;
 using _Scripts.Zombies;
+using UnityEngine;
 
 namespace _Scripts
 {
@@ -41,6 +41,8 @@ namespace _Scripts
             if (!_setup)
                 return;
             _isShooting = false;
+            _onCooldown = false;
+            _hasShot = false;
             _isReloading = false;
             UpdateUi();
         }
@@ -50,11 +52,14 @@ namespace _Scripts
             if (!_setup)
                 return;
             _isShooting = false;
+            _onCooldown = false;
+            _hasShot = false;
             _isReloading = false;
         }
 
         private void Update()
         {
+            UpdateUi();
             if (_currentMagAmmo <= 0 && !_isReloading)
             {
                 StartCoroutine(Reload());
@@ -80,7 +85,6 @@ namespace _Scripts
         {
             if (_currentMagAmmo <= 0)
                 return;
-            Debug.Log("is shooting");
             _currentMagAmmo--;
             CalculateHits();
 
@@ -101,7 +105,6 @@ namespace _Scripts
                 // If we hit a wall or anything that's supposed to block bullets
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Environment"))
                 {
-                    Debug.Log("Hit wall before zombie. Shot blocked.");
                     break; // stop checking, bullet is blocked
                 }
 
@@ -112,7 +115,7 @@ namespace _Scripts
                     if (zombie)
                     {
                         zombie.TakeDamageRpc(weaponData.damage);
-                        Debug.Log($"Hit zombie: {zombie.name}");
+                        zombie.PlayHitAnimation(weaponData.damage);
                         break; // stop after first valid hit
                     }
                 }
@@ -152,6 +155,18 @@ namespace _Scripts
         private void PlayVisuals()
         {
             // shooting visuals (recoil muzzle flash etc.)
+        }
+
+        public void ResetAmmo()
+        {
+            if (weaponData == null)
+            {
+                Debug.LogError("WeaponData is not assigned in the inspector.");
+                return;
+            }
+            _currentMagAmmo = weaponData.magazineSize;
+            _currentTotalAmmo = weaponData.maxAmmo;
+            UpdateUi();
         }
     }
 }

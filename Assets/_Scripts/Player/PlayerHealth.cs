@@ -33,7 +33,6 @@ namespace _Scripts.Player
         {
             if (!IsOwner)
                 return;
-            Debug.Log("Player has died.");
             GameManager.Instance.PlayerDiedRpc(OwnerClientId);
             // set the camera to follow another player
         }

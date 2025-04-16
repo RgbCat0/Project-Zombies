@@ -30,6 +30,8 @@ namespace _Scripts
             canvas.gameObject.SetActive(false);
             animator.SetTrigger("Open");
             Debug.Log("Door opened.");
+            GetComponent<Collider>().enabled = false;
+            enabled = false;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace _Scripts.Player
 
         void LateUpdate()
         {
-            if (CamHolder is not null) // Check if CamHolder is assigned
+            if (CamHolder != null) // Check if CamHolder is assigned
                 transform.position = CamHolder.position;
         }
     }

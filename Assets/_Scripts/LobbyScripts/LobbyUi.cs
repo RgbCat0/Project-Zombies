@@ -112,12 +112,7 @@ namespace _Scripts.LobbyScripts
         {
             mainName.text = "";
             hostLobbyName.text = "";
-            mainName.onValueChanged.AddListener(
-                delegate
-                {
-                    CheckName();
-                }
-            );
+            mainName.onValueChanged.AddListener(CheckName);
         }
 
         private void CheckName()

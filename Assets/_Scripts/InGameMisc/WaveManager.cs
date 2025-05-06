@@ -46,8 +46,16 @@ namespace _Scripts
         {
             UpdateUIRpc(_currentWave, _currentWaveEnemyCount);
             // get the current wave
-            Wave waveToSpawn = waves.First(wave => wave.startWave >= _currentWave);
-            StartCoroutine(ZombieManager.Instance.SpawnZombie(waveToSpawn, _currentWaveEnemyCount));
+            Wave wave = null;
+            // checks all waves and gets the highest one above startWave
+            foreach (var waveToCheck in waves)
+            {
+                if (waveToCheck.startWave <= _currentWave)
+                {
+                    wave = waveToCheck;
+                }
+            }
+            StartCoroutine(ZombieManager.Instance.SpawnZombie(wave, _currentWaveEnemyCount));
             _currentEnemyCount += _currentWaveEnemyCount;
         }
 

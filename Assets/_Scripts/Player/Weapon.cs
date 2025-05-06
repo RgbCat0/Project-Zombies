@@ -115,7 +115,6 @@ namespace _Scripts
                     if (zombie)
                     {
                         zombie.TakeDamageRpc(weaponData.damage);
-                        zombie.PlayHitAnimation(weaponData.damage);
                         break; // stop after first valid hit
                     }
                 }

@@ -1,26 +1,21 @@
-using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace _Scripts
 {
-    public class Door : NetworkBehaviour
+    public class Door : Interactable
     {
         [SerializeField]
         private Animator animator;
-        public int doorPrice = 1000;
 
-        [SerializeField]
-        private Canvas canvas;
-
-        public TextMeshProUGUI priceText;
-
-        private void Start()
+        protected override void Start()
         {
-            if (priceText != null)
-            {
-                priceText.text = doorPrice.ToString();
-            }
+            base.Start(); // added for consistency
+        }
+
+        public override void Buy()
+        {
+            OpenDoorRpc(); // Call the RPC to open the door
         }
 
         [Rpc(SendTo.Everyone)]

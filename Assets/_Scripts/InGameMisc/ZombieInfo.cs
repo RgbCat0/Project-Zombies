@@ -12,5 +12,6 @@ namespace _Scripts
         public GameObject model; // model to spawn for different zombies
         public float healthMultiplier;
         public float speedMultiplier;
+        public float attackDamage;
     }
 }

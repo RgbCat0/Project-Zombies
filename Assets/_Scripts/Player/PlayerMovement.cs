@@ -13,7 +13,6 @@ namespace _Scripts.Player
         private Vector2 _mouseInput;
         private Transform _camera;
         private Vector2 _cameraRotation;
-        private Door _lookAtDoor;
 
         [Header("Mouse")]
         [SerializeField]
@@ -85,7 +84,6 @@ namespace _Scripts.Player
             inputActions.Player.Look.canceled += _ => _mouseInput = Vector2.zero;
             inputActions.Player.Jump.performed += _ => _isJumping = true;
             inputActions.Player.Jump.canceled += _ => _isJumping = false;
-            inputActions.Player.Interact.performed += _ => CheckBuy();
             // GetComponent<NetworkTransform>().enabled = false;
             spawnPos = GameObject.FindWithTag("SpawnPos").transform;
             StartCoroutine(LateSpawnPos());
@@ -115,7 +113,6 @@ namespace _Scripts.Player
 
         private void FixedUpdate()
         {
-            CheckIfLookingAtDoor();
             HandleMovement();
             Jump();
             if (_isGrounded && !_jumpCoroutine && !_canJump)
@@ -185,40 +182,6 @@ namespace _Scripts.Player
             yield return new WaitForSeconds(jumpCooldown);
             _canJump = true;
             _jumpCoroutine = false;
-        }
-
-        private void CheckIfLookingAtDoor()
-        {
-            if (Physics.Raycast(_camera.position, _camera.forward, out RaycastHit hit))
-            {
-                if (hit.collider.CompareTag("Door"))
-                {
-                    if (_lookAtDoor == null)
-                        _lookAtDoor = hit.collider.transform.parent.GetComponent<Door>();
-                    _lookAtDoor.priceText.gameObject.SetActive(true);
-                    _lookAtDoor.priceText.text = $"{_lookAtDoor.doorPrice}";
-                    _lookAtDoor.priceText.color =
-                        PointManager.Instance.GetPoints() > _lookAtDoor.doorPrice
-                            ? Color.white
-                            : Color.red;
-                }
-            }
-            else
-            {
-                if (_lookAtDoor != null)
-                    _lookAtDoor.priceText.gameObject.SetActive(false);
-                _lookAtDoor = null;
-            }
-        }
-
-        private void CheckBuy() // shoots a raycast to check if the player is looking at a buyable object
-        {
-            if (_lookAtDoor == null)
-                return;
-            if (_lookAtDoor.doorPrice > PointManager.Instance.GetPoints())
-                return;
-            _lookAtDoor.OpenDoorRpc();
-            PointManager.Instance.RemovePoints(_lookAtDoor.doorPrice);
         }
     }
 }

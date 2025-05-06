@@ -14,6 +14,7 @@ namespace _Scripts.Zombies
         public float speed = 3.2f;
 
         public static List<Transform> players = new();
+        private Animator _animator;
 
         private void Start()
         {
@@ -22,13 +23,23 @@ namespace _Scripts.Zombies
                 enabled = false;
                 return;
             }
+
+            _animator = GetComponentInChildren<Animator>();
             _agent = GetComponent<NavMeshAgent>();
-            _agent.stoppingDistance = 1.5f;
+            _agent.stoppingDistance = 0.4f;
         }
 
         private void FixedUpdate()
         {
             _agent.SetDestination(GetClosestPlayer());
+            if (_agent.velocity.magnitude > 0.1f)
+            {
+                _animator.SetBool("Walking", true);
+            }
+            else
+            {
+                _animator.SetBool("Walking", false);
+            }
             _agent.speed = speed;
         }
 

@@ -8,6 +8,7 @@ TagManager:
   - InGameManager
   - Buyable
   - Door
+  - Model
   layers:
   - Default
   - TransparentFX

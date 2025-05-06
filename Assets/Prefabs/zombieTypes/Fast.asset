@@ -17,3 +17,4 @@ MonoBehaviour:
   model: {fileID: 5415920967424984211, guid: 37c5d2e7ca8dd5346b206796b25530ff, type: 3}
   healthMultiplier: 0.7
   speedMultiplier: 1.6
+  attackDamage: 7.5

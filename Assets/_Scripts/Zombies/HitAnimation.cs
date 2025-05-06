@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace _Scripts.Zombies
 {
-    public class HitAnimation : MonoBehaviour
+    public class HitAnimation : MonoBehaviour // shows how much damage the player dealt.
     {
         [SerializeField]
         private TextMeshProUGUI hitText;

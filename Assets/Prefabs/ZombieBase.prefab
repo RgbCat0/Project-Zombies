@@ -262,7 +262,6 @@ MonoBehaviour:
   healthBarParent: {fileID: 1850137548037935090}
   healthText: {fileID: 3753674960984648113}
   healthBarHideTime: 2
-  changeWaitTime: 0.5
 --- !u!114 &2476365423209880359
 MonoBehaviour:
   m_ObjectHideFlags: 0
